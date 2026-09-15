@@ -1,11 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { classifyFixtures } from './classification';
+import { classifyFixtures, partitionClubFixtures } from './classification';
 import type { FixtureRecord } from './api';
 
 const team = (id: string, club = false) => ({
   id,
   name: id,
   short_name: id,
+  slug: id,
   is_eskisehirspor: club,
   crest_path: null,
 });
@@ -39,5 +40,20 @@ describe('fixture lists', () => {
     ]);
     expect(upcoming.map((item) => item.id)).toEqual(['live', 'next', 'post', 'off']);
     expect(recent.map((item) => item.id)).toEqual(['new', 'old']);
+  });
+
+  it('separates Eskişehirspor fixtures from the rest of the group', () => {
+    const club = fixture({ id: 'club', status: 'scheduled', kickoff_at: '2026-09-20T00:00:00.000Z' });
+    const other = fixture({
+      id: 'other',
+      status: 'scheduled',
+      kickoff_at: '2026-09-20T00:00:00.000Z',
+      home_team: team('altay'),
+      away_team: team('usak'),
+    });
+    expect(partitionClubFixtures([club, other])).toEqual({
+      club: [club],
+      rest: [other],
+    });
   });
 });

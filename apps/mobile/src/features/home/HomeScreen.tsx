@@ -16,7 +16,7 @@ import {
 import { toUserMessage } from '@/lib/errors';
 import { useNetwork } from '@/lib/network-context';
 import { useAnnouncement, useNewsList } from '@/features/news/hooks';
-import { classifyFixtures } from '@/features/matches/classification';
+import { classifyFixtures, clubFixtures } from '@/features/matches/classification';
 import { useFixture, useFixtures, useServerAlignedClock } from '@/features/matches/hooks';
 import { MatchCard, MatchRowPlaceholder } from '@/features/matches/MatchCard';
 import { MatchHero } from './MatchHero';
@@ -28,7 +28,7 @@ export function HomeScreen() {
   const fixturesQuery = useFixtures();
   const newsQuery = useNewsList();
   const announcementQuery = useAnnouncement();
-  const classified = classifyFixtures(fixturesQuery.data ?? []);
+  const classified = classifyFixtures(clubFixtures(fixturesQuery.data ?? []));
   const preview = classified.upcoming[0] ?? null;
   useFixture(preview?.id ?? '');
   const nowMs = useServerAlignedClock(preview?.status === 'live' || preview?.status === 'halftime');
@@ -141,7 +141,7 @@ export function HomeScreen() {
             <MatchRowPlaceholder mode="result" />
             <EditorialEmpty
               title="Sonuç yok"
-              description="Biten resmi maç kaydı girilince skor burada durur."
+              description="Biten Eskişehirspor maçı burada durur."
             />
           </>
         )}
@@ -149,8 +149,8 @@ export function HomeScreen() {
 
       <View>
         <SectionHeader title="Kulüp hayatı" quiet />
-        <FutureSlot title="Tribün" detail="Forum ve maç sohbeti. Sahte gönderi yok." />
-        <FutureSlot title="Oyna" detail="XP, tahmin ve quiz defteri sunucuda kurulunca." />
+        <FutureSlot title="Tribün" detail="Forum ve maç sohbeti sonraki fazda açılır." />
+        <FutureSlot title="Oyna" detail="Puan, tahmin ve quiz sunucuda kurulunca görünür." />
       </View>
     </Screen>
   );

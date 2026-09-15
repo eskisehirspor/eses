@@ -36,7 +36,7 @@ export function EditorialImage({
       {!uri ? <View style={styles.cap} /> : null}
       {!uri && label ? (
         <View style={styles.emptyLabel}>
-          <Text variant="overline" muted>
+          <Text variant="caption" muted>
             {label}
           </Text>
         </View>

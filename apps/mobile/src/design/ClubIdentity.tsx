@@ -16,15 +16,17 @@ export function ClubIdentity({
 }) {
   return (
     <View style={[styles.wrap, compact && styles.compact]}>
-      <ClubCrest size={compact ? 'sm' : 'md'} />
+      <ClubCrest size={compact ? 'md' : 'lg'} />
       <View style={styles.copy}>
-        <Text variant="overline" tone="accent">
+        <Text variant="caption" tone="accent">
           {kicker}
         </Text>
         <Text variant={compact ? 'title' : 'masthead'} numberOfLines={2}>
           {title}
         </Text>
-        <Text variant="overline">{subtitle}</Text>
+        <Text variant="caption" muted>
+          {subtitle}
+        </Text>
       </View>
     </View>
   );

@@ -5,7 +5,8 @@ import {
   type PressableProps,
   type ViewStyle,
 } from 'react-native';
-import { colors, radii, spacing, touchTarget, typography } from './tokens';
+import { radii, spacing, touchTarget, typography } from './tokens';
+import { useColors } from './theme-context';
 import { Text } from './Text';
 
 type Variant = 'primary' | 'secondary' | 'ghost' | 'danger';
@@ -24,6 +25,7 @@ export function Button({
   style,
   ...rest
 }: ButtonProps) {
+  const colors = useColors();
   const isDisabled = disabled || loading;
   return (
     <Pressable
@@ -32,7 +34,14 @@ export function Button({
       disabled={isDisabled}
       style={(state) => [
         styles.base,
-        styles[variant],
+        variant === 'primary' && { backgroundColor: colors.red },
+        variant === 'secondary' && { backgroundColor: 'transparent', borderWidth: StyleSheet.hairlineWidth, borderColor: colors.border },
+        variant === 'ghost' && { backgroundColor: 'transparent' },
+        variant === 'danger' && {
+          backgroundColor: colors.surfaceRaised,
+          borderWidth: StyleSheet.hairlineWidth,
+          borderColor: colors.danger,
+        },
         state.pressed && styles.pressed,
         isDisabled && styles.disabled,
         style as ViewStyle,
@@ -42,7 +51,15 @@ export function Button({
       {loading ? (
         <ActivityIndicator color={variant === 'primary' ? colors.white : colors.red} />
       ) : (
-        <Text style={[styles.label, variant === 'primary' && styles.labelOnPrimary]}>{label}</Text>
+        <Text
+          style={[
+            styles.label,
+            { color: colors.text },
+            variant === 'primary' && { color: colors.white },
+          ]}
+        >
+          {label}
+        </Text>
       )}
     </Pressable>
   );
@@ -56,22 +73,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  primary: {
-    backgroundColor: colors.red,
-  },
-  secondary: {
-    backgroundColor: 'transparent',
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.border,
-  },
-  ghost: {
-    backgroundColor: 'transparent',
-  },
-  danger: {
-    backgroundColor: colors.surfaceRaised,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.danger,
-  },
   pressed: {
     opacity: 0.86,
   },
@@ -80,10 +81,8 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: typography.size.md,
-    fontWeight: '600',
-    color: colors.text,
-  },
-  labelOnPrimary: {
-    color: colors.white,
+    lineHeight: typography.lineHeight.md,
+    fontWeight: typography.weight.semibold,
+    fontFamily: typography.family.ui,
   },
 });

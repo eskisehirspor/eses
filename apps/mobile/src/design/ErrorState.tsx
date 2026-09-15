@@ -1,6 +1,7 @@
 import { View, StyleSheet } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { colors, iconSize, spacing } from './tokens';
+import { iconSize, spacing } from './tokens';
+import { useColors } from './theme-context';
 import { Text } from './Text';
 import { Button } from './Button';
 
@@ -13,6 +14,7 @@ export function ErrorState({
   description: string;
   onRetry?: () => void;
 }) {
+  const colors = useColors();
   return (
     <View style={styles.wrap}>
       <Ionicons name="warning-outline" size={iconSize.xl} color={colors.danger} />

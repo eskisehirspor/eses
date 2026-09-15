@@ -1,5 +1,5 @@
 import { Pressable, StyleSheet, View } from 'react-native';
-import { colors, layout, spacing } from './tokens';
+import { colors, layout, spacing, touchTarget } from './tokens';
 import { Text } from './Text';
 
 export function SectionHeader({
@@ -24,7 +24,7 @@ export function SectionHeader({
             {eyebrow}
           </Text>
         ) : null}
-        <Text variant={quiet ? 'caption' : 'subtitle'}>{title}</Text>
+        <Text variant="subtitle">{title}</Text>
       </View>
       {actionLabel && onAction ? (
         <Pressable
@@ -63,7 +63,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   action: {
-    minHeight: 32,
+    minHeight: touchTarget,
+    minWidth: touchTarget,
     justifyContent: 'center',
+    paddingHorizontal: spacing.xs,
   },
 });

@@ -3,6 +3,7 @@ export * from './analytics';
 export * from './auth-providers';
 export * from './football-catalog';
 export * from './home';
+export * from './kickoff';
 export * from './live-clock';
 export * from './live-match';
 export * from './matches';

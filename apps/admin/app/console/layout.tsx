@@ -51,7 +51,7 @@ export default async function ConsoleLayout({ children }: { children: ReactNode 
   return (
     <div className="shell">
       <aside className="nav">
-        <strong>ES ES Admin</strong>
+        <strong>Eskişehirspor Admin</strong>
         <Link href="/console">Özet</Link>
         {hasContentAccess(roles) ? <Link href="/console/news">Haberler</Link> : null}
         {hasOpsAdminAccess(roles) ? <Link href="/console/matches">Maçlar</Link> : null}

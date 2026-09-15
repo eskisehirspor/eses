@@ -1,20 +1,32 @@
 import { StyleSheet, View } from 'react-native';
-import { colors, layout, spacing } from './tokens';
+import { layout, spacing } from './tokens';
+import { useColors } from './theme-context';
 import { ClubCrest } from './ClubCrest';
 import { Text } from './Text';
 
-export function IdentityCard() {
+export function IdentityCard({
+  supporterName,
+  detail,
+}: {
+  supporterName?: string;
+  detail?: string;
+}) {
+  const colors = useColors();
+  const titled = Boolean(supporterName);
   return (
-    <View style={styles.card} accessibilityLabel="Taraftar kartı yakında">
-      <View style={styles.stripe} />
-      <ClubCrest size="md" />
+    <View
+      style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}
+      accessibilityLabel={titled ? `${supporterName} taraftar kimliği` : 'Taraftar kartı yakında'}
+    >
+      <View style={[styles.stripe, { backgroundColor: colors.red }]} />
+      <ClubCrest size="lg" />
       <View style={styles.copy}>
-        <Text variant="overline" tone="accent">
-          ES ES
+        <Text variant="caption" tone="accent">
+          Eskişehirspor
         </Text>
-        <Text variant="title">Taraftar kartı</Text>
+        <Text variant="title">{supporterName ?? 'Taraftar kartı'}</Text>
         <Text variant="caption" muted>
-          Metal kimlik sonraki fazda bu kartın yerini alır.
+          {detail ?? 'Metal kimlik sonraki fazda bu kartın yerini alır.'}
         </Text>
       </View>
     </View>
@@ -25,9 +37,7 @@ const styles = StyleSheet.create({
   card: {
     minHeight: 148,
     padding: spacing.lg,
-    backgroundColor: colors.charcoal,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.border,
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.md,
@@ -39,7 +49,6 @@ const styles = StyleSheet.create({
     top: 0,
     bottom: 0,
     width: layout.stripe,
-    backgroundColor: colors.red,
   },
   copy: {
     flex: 1,

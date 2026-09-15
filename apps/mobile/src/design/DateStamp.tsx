@@ -1,15 +1,17 @@
 import { StyleSheet, View } from 'react-native';
-import { colors, spacing } from './tokens';
+import { layout, spacing, typography } from './tokens';
+import { useColors } from './theme-context';
 import { Text } from './Text';
 
 export function DateStamp({ iso }: { iso?: string | null }) {
+  const colors = useColors();
   if (!iso) {
     return (
-      <View style={styles.stamp} accessibilityLabel="Tarih yok">
-        <Text variant="overline" muted>
+      <View style={[styles.stamp, { borderRightColor: colors.border }]} accessibilityLabel="Tarih yok">
+        <Text style={styles.day} muted>
           —
         </Text>
-        <Text variant="title" muted>
+        <Text variant="caption" muted>
           —
         </Text>
       </View>
@@ -17,18 +19,24 @@ export function DateStamp({ iso }: { iso?: string | null }) {
   }
 
   const date = new Date(iso);
-  const day = new Intl.DateTimeFormat('tr-TR', { day: '2-digit' }).format(date);
-  const month = new Intl.DateTimeFormat('tr-TR', { month: 'short' }).format(date).replace('.', '').toUpperCase();
-  const weekday = new Intl.DateTimeFormat('tr-TR', { weekday: 'short' }).format(date).replace('.', '').toUpperCase();
+  const day = new Intl.DateTimeFormat('tr-TR', { day: '2-digit', timeZone: 'Europe/Istanbul' }).format(date);
+  const month = new Intl.DateTimeFormat('tr-TR', { month: 'short', timeZone: 'Europe/Istanbul' })
+    .format(date)
+    .replace('.', '')
+    .toLocaleUpperCase('tr-TR');
+  const weekday = new Intl.DateTimeFormat('tr-TR', { weekday: 'short', timeZone: 'Europe/Istanbul' })
+    .format(date)
+    .replace('.', '')
+    .toLocaleUpperCase('tr-TR');
 
   return (
-    <View style={styles.stamp} accessibilityLabel={`${weekday} ${day} ${month}`}>
-      <Text variant="overline" muted>
-        {weekday}
-      </Text>
-      <Text variant="title">{day}</Text>
-      <Text variant="overline" tone="accent">
+    <View style={[styles.stamp, { borderRightColor: colors.border }]} accessibilityLabel={`${day} ${month} ${weekday}`}>
+      <Text style={[styles.day, { color: colors.text }]}>{day}</Text>
+      <Text variant="caption" tone="accent" style={styles.month}>
         {month}
+      </Text>
+      <Text variant="caption" muted>
+        {weekday}
       </Text>
     </View>
   );
@@ -36,11 +44,20 @@ export function DateStamp({ iso }: { iso?: string | null }) {
 
 const styles = StyleSheet.create({
   stamp: {
-    width: 52,
+    width: layout.dateStamp,
     alignItems: 'flex-start',
-    gap: 2,
+    justifyContent: 'center',
+    gap: 1,
     paddingRight: spacing.sm,
     borderRightWidth: StyleSheet.hairlineWidth,
-    borderRightColor: colors.border,
+  },
+  day: {
+    fontSize: typography.size.dateDay,
+    lineHeight: typography.lineHeight.dateDay,
+    fontWeight: typography.weight.bold,
+    fontFamily: typography.family.ui,
+  },
+  month: {
+    fontWeight: typography.weight.semibold,
   },
 });

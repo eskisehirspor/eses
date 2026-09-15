@@ -1,11 +1,7 @@
+import { formatKickoffDate, formatKickoffLabel, formatKickoffTime, hasKnownKickoffTime } from '@eskisehirspor/shared';
+
 export function formatDateTime(iso: string): string {
-  return new Intl.DateTimeFormat('tr-TR', {
-    weekday: 'short',
-    day: 'numeric',
-    month: 'short',
-    hour: '2-digit',
-    minute: '2-digit',
-  }).format(new Date(iso));
+  return formatKickoffLabel(iso);
 }
 
 export function formatDate(iso: string): string {
@@ -21,12 +17,8 @@ export function formatMatchDay(iso: string): string {
     weekday: 'long',
     day: 'numeric',
     month: 'long',
+    timeZone: 'Europe/Istanbul',
   }).format(new Date(iso));
 }
 
-export function formatTime(iso: string): string {
-  return new Intl.DateTimeFormat('tr-TR', {
-    hour: '2-digit',
-    minute: '2-digit',
-  }).format(new Date(iso));
-}
+export { formatKickoffDate, formatKickoffLabel, formatKickoffTime, hasKnownKickoffTime };

@@ -1,6 +1,7 @@
 import { StyleSheet, View } from 'react-native';
+import { displayTeamName } from '@eskisehirspor/shared';
 import { TeamMark, Text } from '@/design';
-import { colors, spacing } from '@/design/tokens';
+import { colors, spacing, typography } from '@/design/tokens';
 import type { StandingRecord } from './api';
 
 function formatGd(value: number) {
@@ -24,53 +25,56 @@ export function StandingsTable({
       </Text>
       <View style={styles.head}>
         <Text variant="caption" muted style={styles.pos}>
-          POS
+          #
         </Text>
         <Text variant="caption" muted style={styles.teamHead}>
-          TEAM
+          Takım
         </Text>
         <Text variant="caption" muted style={styles.stat}>
-          P
+          O
         </Text>
         <Text variant="caption" muted style={styles.stat}>
-          W
+          G
         </Text>
         <Text variant="caption" muted style={styles.stat}>
-          D
+          B
         </Text>
         <Text variant="caption" muted style={styles.stat}>
-          L
+          M
         </Text>
         <Text variant="caption" muted style={styles.gd}>
-          GD
+          AV
         </Text>
         <Text variant="caption" muted style={styles.pts}>
-          PTS
+          P
         </Text>
       </View>
-      {rows.map((row) => (
-        <View key={row.team.id} style={[styles.row, row.team.is_eskisehirspor && styles.clubRow]}>
-          <Text style={styles.pos}>{row.position}</Text>
-          <View style={styles.team}>
-            <TeamMark
-              name={row.team.name}
-              shortName={row.team.short_name}
-              isClub={row.team.is_eskisehirspor}
-              crestUri={row.team.crest_path}
-              size="xs"
-            />
-            <Text numberOfLines={1} style={styles.teamName}>
-              {row.team.short_name}
-            </Text>
+      {rows.map((row) => {
+        const name = displayTeamName(row.team);
+        return (
+          <View key={row.team.id} style={[styles.row, row.team.is_eskisehirspor && styles.clubRow]}>
+            <Text style={styles.pos}>{row.position}</Text>
+            <View style={styles.team}>
+              <TeamMark
+                name={name}
+                shortName={row.team.short_name}
+                isClub={row.team.is_eskisehirspor}
+                crestUri={row.team.crest_path}
+                size="xs"
+              />
+              <Text numberOfLines={1} style={[styles.teamName, row.team.is_eskisehirspor && styles.clubName]}>
+                {name}
+              </Text>
+            </View>
+            <Text style={styles.stat}>{row.played}</Text>
+            <Text style={styles.stat}>{row.wins}</Text>
+            <Text style={styles.stat}>{row.draws}</Text>
+            <Text style={styles.stat}>{row.losses}</Text>
+            <Text style={styles.gd}>{formatGd(row.goal_difference)}</Text>
+            <Text style={styles.pts}>{row.points}</Text>
           </View>
-          <Text style={styles.stat}>{row.played}</Text>
-          <Text style={styles.stat}>{row.wins}</Text>
-          <Text style={styles.stat}>{row.draws}</Text>
-          <Text style={styles.stat}>{row.losses}</Text>
-          <Text style={styles.gd}>{formatGd(row.goal_difference)}</Text>
-          <Text style={styles.pts}>{row.points}</Text>
-        </View>
-      ))}
+        );
+      })}
     </View>
   );
 }
@@ -89,7 +93,7 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
     alignItems: 'center',
-    minHeight: 44,
+    minHeight: 48,
     gap: 2,
   },
   clubRow: {
@@ -100,10 +104,10 @@ const styles = StyleSheet.create({
     marginLeft: -8,
   },
   pos: {
-    width: 32,
+    width: 28,
     textAlign: 'center',
-    fontSize: 11,
-    letterSpacing: 0.4,
+    fontSize: typography.size.xs,
+    fontVariant: ['tabular-nums'],
   },
   teamHead: {
     flex: 1,
@@ -117,21 +121,29 @@ const styles = StyleSheet.create({
   },
   teamName: {
     flex: 1,
-    fontSize: 13,
+    fontSize: typography.size.sm,
+    lineHeight: typography.lineHeight.sm,
+  },
+  clubName: {
+    fontWeight: typography.weight.bold,
   },
   stat: {
-    width: 22,
+    width: 24,
     textAlign: 'center',
-    fontSize: 12,
+    fontSize: typography.size.xs,
+    fontVariant: ['tabular-nums'],
   },
   gd: {
-    width: 28,
+    width: 32,
     textAlign: 'center',
-    fontSize: 12,
+    fontSize: typography.size.xs,
+    fontVariant: ['tabular-nums'],
   },
   pts: {
     width: 32,
     textAlign: 'center',
-    fontSize: 13,
+    fontSize: typography.size.sm,
+    fontWeight: typography.weight.semibold,
+    fontVariant: ['tabular-nums'],
   },
 });

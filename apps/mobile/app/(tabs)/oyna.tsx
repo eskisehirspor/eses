@@ -35,7 +35,7 @@ export default function PlayScreen() {
       <HubModule
         index="01"
         icon="flash-outline"
-        title="ES ES XP"
+        title="Puan"
         detail="Sunucu defteri, tavan ve işlem bütünlüğü. İstemci yazamaz."
       />
       <HubModule

@@ -28,6 +28,7 @@ const styles = StyleSheet.create({
   row: {
     gap: 4,
     paddingVertical: spacing.md,
+    minHeight: 44,
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: colors.borderSubtle,
   },

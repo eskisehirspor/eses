@@ -1,11 +1,11 @@
 import { StyleSheet, View } from 'react-native';
-import { displaysScore, FIXTURE_STATUS_LABELS } from '@eskisehirspor/shared';
+import { displayTeamName, displaysScore, FIXTURE_STATUS_LABELS, formatKickoffLabel, formatKickoffTime } from '@eskisehirspor/shared';
 import { ClubCrest, PressableScale, TeamMark, Text } from '@/design';
-import { colors, layout, spacing } from '@/design/tokens';
-import { formatMatchDay, formatTime } from '@/lib/format';
+import { layout, spacing, typography } from '@/design/tokens';
+import { useColors } from '@/design/theme-context';
 import type { FixtureRecord } from './api';
 
-function EmptyOpponent({ size }: { size: number }) {
+function EmptyOpponent({ size, borderColor }: { size: number; borderColor: string }) {
   return (
     <View
       accessibilityLabel="Rakip henüz yok"
@@ -15,6 +15,7 @@ function EmptyOpponent({ size }: { size: number }) {
           width: size,
           height: size,
           borderRadius: size / 2,
+          borderColor,
         },
       ]}
     />
@@ -34,20 +35,32 @@ export function MatchScoreboard({
   onPress?: () => void;
   clockLabel?: string | null;
 }) {
+  const colors = useColors();
   const showScore = fixture ? displaysScore(fixture.status) : false;
+  const homeName = fixture ? displayTeamName(fixture.home_team) : 'Eskişehirspor';
+  const awayName = fixture ? displayTeamName(fixture.away_team) : 'Rakip';
   const center = showScore && fixture
     ? `${fixture.home_score ?? '–'}–${fixture.away_score ?? '–'}`
     : fixture
-      ? formatTime(fixture.kickoff_at)
+      ? formatKickoffTime(fixture.kickoff_at)
       : null;
 
   const board = (
-    <View style={styles.board}>
+    <View
+      style={[
+        styles.board,
+        {
+          backgroundColor: colors.surface,
+          borderTopColor: colors.red,
+          borderBottomColor: colors.borderSubtle,
+        },
+      ]}
+    >
       <View style={styles.top}>
-        <Text variant="overline" tone="accent">
+        <Text variant="caption" tone="accent">
           {kicker}
         </Text>
-        <Text variant="overline" muted>
+        <Text variant="caption" muted>
           {fixture ? FIXTURE_STATUS_LABELS[fixture.status] : 'Bekleniyor'}
         </Text>
       </View>
@@ -60,7 +73,7 @@ export function MatchScoreboard({
         <View style={styles.team}>
           {fixture ? (
             <TeamMark
-              name={fixture.home_team.name}
+              name={homeName}
               shortName={fixture.home_team.short_name}
               isClub={fixture.home_team.is_eskisehirspor}
               crestUri={fixture.home_team.crest_path}
@@ -69,8 +82,11 @@ export function MatchScoreboard({
           ) : (
             <ClubCrest size="lg" />
           )}
-          <Text variant="overline" numberOfLines={2} style={styles.teamName}>
-            {fixture ? fixture.home_team.short_name : 'Eskişehirspor'}
+          <Text
+            numberOfLines={2}
+            style={[styles.teamName, fixture?.home_team.is_eskisehirspor && styles.clubName]}
+          >
+            {homeName}
           </Text>
         </View>
         <View style={styles.center}>
@@ -78,34 +94,38 @@ export function MatchScoreboard({
             <Text variant="score">{center}</Text>
           ) : (
             <Text variant="title" muted>
-              — : —
+              —
             </Text>
           )}
-          <Text variant="overline" muted>
+          <Text variant="caption" muted>
             {clockLabel ?? (fixture ? (fixture.home_team.is_eskisehirspor ? 'İç saha' : 'Deplasman') : 'Saha')}
           </Text>
         </View>
         <View style={styles.team}>
           {fixture ? (
             <TeamMark
-              name={fixture.away_team.name}
+              name={awayName}
               shortName={fixture.away_team.short_name}
               isClub={fixture.away_team.is_eskisehirspor}
               crestUri={fixture.away_team.crest_path}
               size="lg"
             />
           ) : (
-            <EmptyOpponent size={72} />
+            <EmptyOpponent size={80} borderColor={colors.border} />
           )}
-          <Text variant="overline" numberOfLines={2} muted={!fixture} style={styles.teamName}>
-            {fixture ? fixture.away_team.short_name : 'Rakip'}
+          <Text
+            numberOfLines={2}
+            muted={!fixture}
+            style={[styles.teamName, fixture?.away_team.is_eskisehirspor && styles.clubName]}
+          >
+            {awayName}
           </Text>
         </View>
       </View>
-      <Text muted>
+      <Text>
         {fixture
-          ? [formatMatchDay(fixture.kickoff_at), fixture.venue?.name].filter(Boolean).join('  ·  ')
-          : 'Tarih, saat ve stadyum resmi kayıtla gelir.'}
+          ? [formatKickoffLabel(fixture.kickoff_at), fixture.venue?.name].filter(Boolean).join('  ·  ')
+          : 'Tarih ve stadyum resmi kayıtla gelir.'}
       </Text>
       {cta ? (
         <Text variant="caption" tone="accent">
@@ -120,7 +140,7 @@ export function MatchScoreboard({
   }
 
   return (
-    <PressableScale onPress={onPress} accessibilityRole="button" accessibilityLabel={kicker}>
+    <PressableScale onPress={onPress} accessibilityRole="button" accessibilityLabel={`${kicker}. ${homeName} ${awayName}`}>
       {board}
     </PressableScale>
   );
@@ -131,11 +151,8 @@ const styles = StyleSheet.create({
     marginHorizontal: -layout.gutter,
     paddingHorizontal: layout.gutter,
     paddingVertical: spacing.xl,
-    backgroundColor: colors.charcoal,
     borderTopWidth: layout.stripe,
-    borderTopColor: colors.red,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.borderSubtle,
     gap: spacing.md,
   },
   top: {
@@ -159,6 +176,12 @@ const styles = StyleSheet.create({
   },
   teamName: {
     textAlign: 'center',
+    fontSize: typography.size.sm,
+    lineHeight: typography.lineHeight.sm,
+    fontWeight: typography.weight.medium,
+  },
+  clubName: {
+    fontWeight: typography.weight.bold,
   },
   center: {
     alignItems: 'center',
@@ -167,7 +190,6 @@ const styles = StyleSheet.create({
   },
   emptyMark: {
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.border,
     backgroundColor: 'transparent',
   },
 });

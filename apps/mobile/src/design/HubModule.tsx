@@ -1,6 +1,7 @@
 import { StyleSheet, View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { colors, iconSize, spacing } from './tokens';
+import { iconSize, spacing } from './tokens';
+import { useColors } from './theme-context';
 import { Text } from './Text';
 import type { IoniconName } from './icons';
 
@@ -15,13 +16,17 @@ export function HubModule({
   detail: string;
   icon: IoniconName;
 }) {
+  const colors = useColors();
   return (
-    <View style={styles.row} accessibilityRole="summary">
+    <View
+      style={[styles.row, { borderBottomColor: colors.borderSubtle }]}
+      accessibilityRole="summary"
+    >
       <Text variant="display" muted style={styles.index}>
         {index}
       </Text>
       <View style={styles.copy}>
-        <Text variant="title">{title}</Text>
+        <Text variant="subtitle">{title}</Text>
         <Text variant="caption" muted>
           {detail}
         </Text>
@@ -39,7 +44,6 @@ const styles = StyleSheet.create({
     minHeight: 88,
     paddingVertical: spacing.md,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.borderSubtle,
   },
   index: {
     width: 56,

@@ -1,5 +1,6 @@
 import { Pressable, StyleSheet, View } from 'react-native';
-import { colors, spacing, touchTarget } from './tokens';
+import { spacing, touchTarget, typography } from './tokens';
+import { useColors } from './theme-context';
 import { Text } from './Text';
 
 export function SegmentedControl<T extends string>({
@@ -11,8 +12,9 @@ export function SegmentedControl<T extends string>({
   options: readonly { value: T; label: string }[];
   onChange: (value: T) => void;
 }) {
+  const colors = useColors();
   return (
-    <View style={styles.bar}>
+    <View style={[styles.bar, { borderBottomColor: colors.border }]}>
       {options.map((option) => {
         const selected = option.value === value;
         return (
@@ -21,9 +23,16 @@ export function SegmentedControl<T extends string>({
             accessibilityRole="button"
             accessibilityState={{ selected }}
             onPress={() => onChange(option.value)}
-            style={[styles.tab, selected && styles.tabSelected]}
+            style={[styles.tab, selected && { borderBottomColor: colors.red }]}
           >
-            <Text variant="caption" style={selected ? styles.labelOn : styles.labelOff}>
+            <Text
+              variant="caption"
+              style={{
+                color: selected ? colors.text : colors.textMuted,
+                fontWeight: selected ? typography.weight.bold : typography.weight.medium,
+                fontSize: typography.size.sm,
+              }}
+            >
               {option.label}
             </Text>
           </Pressable>
@@ -37,7 +46,6 @@ const styles = StyleSheet.create({
   bar: {
     flexDirection: 'row',
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.border,
   },
   tab: {
     flex: 1,
@@ -45,17 +53,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: spacing.xs,
-    borderBottomWidth: 2,
+    borderBottomWidth: 3,
     borderBottomColor: 'transparent',
-  },
-  tabSelected: {
-    borderBottomColor: colors.red,
-  },
-  labelOn: {
-    color: colors.text,
-    fontWeight: '700',
-  },
-  labelOff: {
-    color: colors.textMuted,
   },
 });

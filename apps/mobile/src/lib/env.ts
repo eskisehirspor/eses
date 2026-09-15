@@ -1,6 +1,7 @@
 export function getPublicEnv() {
   const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL ?? '';
-  const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? '';
+  const supabaseAnonKey =
+    process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? process.env.EXPO_PUBLIC_SUPABASE_KEY ?? '';
   const appleEnabled = process.env.EXPO_PUBLIC_AUTH_APPLE_ENABLED === 'true';
   const googleEnabled = process.env.EXPO_PUBLIC_AUTH_GOOGLE_ENABLED === 'true';
 

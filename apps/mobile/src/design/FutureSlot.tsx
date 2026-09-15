@@ -15,7 +15,7 @@ export function FutureSlot({
     <View style={styles.row}>
       <View style={styles.copy}>
         {kicker ? (
-          <Text variant="overline" muted>
+          <Text variant="caption" muted>
             {kicker}
           </Text>
         ) : null}
@@ -37,6 +37,7 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
     justifyContent: 'space-between',
     gap: spacing.md,
+    minHeight: 44,
     paddingVertical: spacing.md,
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: colors.borderSubtle,

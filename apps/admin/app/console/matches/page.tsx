@@ -1,10 +1,53 @@
 import Link from 'next/link';
-import { FIXTURE_STATUS_LABELS, type FixtureStatus } from '@eskisehirspor/shared';
+import {
+  CATALOG_CREST_SOURCE_LABELS,
+  CATALOG_TEAMS,
+  FIXTURE_STATUS_LABELS,
+  catalogCrestPngObjectName,
+  catalogCrestSourceKind,
+  displayTeamName,
+  formatKickoffLabel,
+  type FixtureStatus,
+} from '@eskisehirspor/shared';
 import { importOfficialCatalog, startMatchAction } from '@/lib/matches/actions';
-import { listAdminFixtures } from '@/lib/matches/queries';
+import { listAdminFixtures, listAdminTeams } from '@/lib/matches/queries';
 import { logger } from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
+
+const catalogBySlug = new Map(CATALOG_TEAMS.map((team) => [team.slug, team]));
+
+function crestRows(team: {
+  name: string;
+  slug: string;
+  is_eskisehirspor: boolean;
+  crest_path: string | null;
+  provider_team_id?: string | null;
+}) {
+  const catalog = catalogBySlug.get(team.slug);
+  const kind = catalog ? catalogCrestSourceKind(catalog) : team.is_eskisehirspor ? 'club' : 'none';
+  const expectedPath =
+    kind === 'club'
+      ? null
+      : catalog
+        ? catalogCrestPngObjectName(catalog.providerTeamId)
+        : team.provider_team_id
+          ? catalogCrestPngObjectName(team.provider_team_id)
+          : null;
+  const status =
+    kind === 'club'
+      ? 'Yerel'
+      : team.crest_path
+        ? team.crest_path === expectedPath
+          ? 'Hazır'
+          : 'Yüklü'
+        : 'Eksik';
+  return {
+    sourceLabel: CATALOG_CREST_SOURCE_LABELS[kind],
+    path: team.crest_path ?? expectedPath ?? '—',
+    status,
+  };
+}
 
 export default async function MatchesListPage({
   searchParams,
@@ -13,13 +56,21 @@ export default async function MatchesListPage({
 }) {
   const params = await searchParams;
   let rows: Awaited<ReturnType<typeof listAdminFixtures>> = [];
+  let teams: Awaited<ReturnType<typeof listAdminTeams>> = [];
   let loadError: string | null = null;
   try {
-    rows = await listAdminFixtures();
+    [rows, teams] = await Promise.all([listAdminFixtures(), listAdminTeams()]);
   } catch (error) {
     logger.error('Maç listesi', { code: 'admin.matches.page', cause: error instanceof Error ? error.message : 'unknown' });
     loadError = 'Maçlar yüklenemedi. Migrasyon uygulanmış olmalı.';
   }
+
+  const finished = rows.filter((row) => row.status === 'finished').length;
+  const openScores = rows.filter(
+    (row) => row.status === 'scheduled' && row.home_score == null && row.away_score == null,
+  ).length;
+  const teamCount = new Set(rows.flatMap((row) => [row.home_team.slug, row.away_team.slug])).size;
+  const storedCrests = teams.filter((team) => !team.is_eskisehirspor && Boolean(team.crest_path)).length;
 
   return (
     <main className="main wide">
@@ -30,16 +81,50 @@ export default async function MatchesListPage({
         </form>
       </div>
       <p className="muted">
-        Kaynak: eskisehirspor.org.tr fikstür / A Takım ve TFF Nesine 3. Lig 2. Grup. Canlı skor sağlayıcısı yok.
+        Kaynak: TFF Nesine 3. Lig 2. Grup (pageID=971) ve eskisehirspor.org.tr fikstür doğrulaması. Canlı skor
+        sağlayıcısı yok.
       </p>
-      {params.imported ? <p>Katalog işlendi. Mevcut maçlar tekrar yazılmadı.</p> : null}
+      <p className="muted">
+        Veritabanı: {teamCount} takım · {rows.length} maç · {finished} sonuç · {openScores} skorsuz yaklaşan ·{' '}
+        {storedCrests}/{Math.max(teams.length - 1, 0)} rakip arması
+      </p>
+      {params.imported ? <p>Katalog işlendi. Canlı maçlar korundu; diğer kayıtlar TFF kataloğuyla hizalandı.</p> : null}
       {params.error ? <p className="error">{params.error}</p> : null}
       {loadError ? <p className="error">{loadError}</p> : null}
+      {teams.length > 0 ? (
+        <section>
+          <h2>Takım armaları</h2>
+          <table className="table">
+            <thead>
+              <tr>
+                <th>Takım</th>
+                <th>Kaynak tipi</th>
+                <th>crest_path</th>
+                <th>Durum</th>
+              </tr>
+            </thead>
+            <tbody>
+              {teams.map((team) => {
+                const crest = crestRows(team);
+                return (
+                  <tr key={team.id}>
+                    <td>{team.name}</td>
+                    <td className="muted">{crest.sourceLabel}</td>
+                    <td className="muted">{crest.path}</td>
+                    <td>{crest.status}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </section>
+      ) : null}
       {rows.length === 0 && !loadError ? <p className="muted">Henüz maç kaydı yok.</p> : null}
       {rows.length > 0 ? (
         <table className="table">
           <thead>
             <tr>
+              <th>Hafta</th>
               <th>Tarih</th>
               <th>Ev</th>
               <th>Deplasman</th>
@@ -52,12 +137,15 @@ export default async function MatchesListPage({
           <tbody>
             {rows.map((row) => (
               <tr key={row.id}>
-                <td>{new Date(row.kickoff_at).toLocaleString('tr-TR')}</td>
-                <td>{row.home_team.short_name}</td>
-                <td>{row.away_team.short_name}</td>
+                <td>{row.round_label ?? '—'}</td>
+                <td>{formatKickoffLabel(row.kickoff_at)}</td>
+                <td>{displayTeamName(row.home_team)}</td>
+                <td>{displayTeamName(row.away_team)}</td>
                 <td>{FIXTURE_STATUS_LABELS[row.status as FixtureStatus] ?? row.status}</td>
                 <td>
-                  {row.home_score ?? 0} — {row.away_score ?? 0}
+                  {row.home_score == null || row.away_score == null
+                    ? '—'
+                    : `${row.home_score} — ${row.away_score}`}
                 </td>
                 <td className="muted">{row.live_source}</td>
                 <td>

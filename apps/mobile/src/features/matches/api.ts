@@ -2,11 +2,13 @@ import type { FixtureStatus, MatchEventType } from '@eskisehirspor/shared';
 import { TEAM_CRESTS_BUCKET } from '@eskisehirspor/shared';
 import { getSupabaseClient } from '@/lib/supabase';
 import { logger } from '@/lib/logger';
+import { resolvePreferredOrRemoteCrestUri } from './crest-uri';
 
 export type TeamSummary = {
   id: string;
   name: string;
   short_name: string;
+  slug: string;
   is_eskisehirspor: boolean;
   crest_path: string | null;
 };
@@ -63,17 +65,30 @@ function requireClient() {
 }
 
 const fixtureSelect =
-  'id, kickoff_at, status, round_label, home_score, away_score, started_at, second_half_started_at, ended_at, live_updated_at, home_team:teams!home_team_id(id, name, short_name, is_eskisehirspor, crest_path), away_team:teams!away_team_id(id, name, short_name, is_eskisehirspor, crest_path), competition:competitions!competition_id(id, name, season_label), venue:venues!venue_id(id, name, city)';
+  'id, kickoff_at, status, round_label, home_score, away_score, started_at, second_half_started_at, ended_at, live_updated_at, home_team:teams!home_team_id(id, name, short_name, slug, is_eskisehirspor, crest_path), away_team:teams!away_team_id(id, name, short_name, slug, is_eskisehirspor, crest_path), competition:competitions!competition_id(id, name, season_label), venue:venues!venue_id(id, name, city)';
 
-function resolveCrestPath(path: string | null, isClub: boolean): string | null {
-  if (!path || isClub || path.startsWith('http://') || path.startsWith('https://')) {
+/**
+ * Prefer live preferred PNG URL by slug; else https; else storage public URL.
+ * Previously https paths were incorrectly discarded (always null).
+ */
+export function resolveCrestDisplayUri(input: {
+  slug: string;
+  isClub: boolean;
+  crestPath: string | null;
+}): string | null {
+  const preferredOrRemote = resolvePreferredOrRemoteCrestUri(input);
+  if (preferredOrRemote) {
+    return preferredOrRemote;
+  }
+  if (input.isClub || !input.crestPath) {
     return null;
   }
   const client = getSupabaseClient();
   if (!client) {
     return null;
   }
-  return client.storage.from(TEAM_CRESTS_BUCKET).getPublicUrl(path).data.publicUrl;
+  const publicUrl = client.storage.from(TEAM_CRESTS_BUCKET).getPublicUrl(input.crestPath).data.publicUrl;
+  return `${publicUrl}${publicUrl.includes('?') ? '&' : '?'}v=png2`;
 }
 
 function asTeam(value: TeamSummary | TeamSummary[] | null): TeamSummary {
@@ -81,12 +96,19 @@ function asTeam(value: TeamSummary | TeamSummary[] | null): TeamSummary {
   if (!team) {
     throw new Error('missing_team');
   }
+  const slug = team.slug ?? '';
+  const isClub = Boolean(team.is_eskisehirspor);
   return {
     id: team.id,
     name: team.name,
     short_name: team.short_name,
-    is_eskisehirspor: Boolean(team.is_eskisehirspor),
-    crest_path: resolveCrestPath(team.crest_path ?? null, Boolean(team.is_eskisehirspor)),
+    slug,
+    is_eskisehirspor: isClub,
+    crest_path: resolveCrestDisplayUri({
+      slug,
+      isClub,
+      crestPath: team.crest_path ?? null,
+    }),
   };
 }
 
@@ -158,7 +180,7 @@ export async function fetchActiveStandings(): Promise<{
   const { data, error } = await supabase
     .from('standings')
     .select(
-      'position, played, wins, draws, losses, goals_for, goals_against, goal_difference, points, team:teams!team_id(id, name, short_name, is_eskisehirspor, crest_path)',
+      'position, played, wins, draws, losses, goals_for, goals_against, goal_difference, points, team:teams!team_id(id, name, short_name, slug, is_eskisehirspor, crest_path)',
     )
     .eq('competition_id', competition.id)
     .order('position', { ascending: true });
@@ -187,7 +209,9 @@ export async function fetchMatchEvents(fixtureId: string): Promise<MatchEventRec
   const supabase = requireClient();
   const { data, error } = await supabase
     .from('match_events')
-    .select('id, fixture_id, minute, extra_minute, event_type, team_id, player_id, related_player_id, reversed_at, sort_key')
+    .select(
+      'id, fixture_id, minute, extra_minute, event_type, team_id, player_id, related_player_id, reversed_at, sort_key',
+    )
     .eq('fixture_id', fixtureId)
     .is('reversed_at', null)
     .order('sort_key', { ascending: true });

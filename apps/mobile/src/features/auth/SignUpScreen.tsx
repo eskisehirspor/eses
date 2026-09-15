@@ -1,6 +1,7 @@
 import { Link, router } from 'expo-router';
 import { useState } from 'react';
-import { DisplayNameSchema, SignUpSchema } from '@eskisehirspor/shared';
+import { SignUpSchema } from '@eskisehirspor/shared';
+import { applySignupDisplayName } from '@/features/profile/api';
 import { Button, Card, ClubCrest, ErrorState, Input, OfflineState, Screen, Text, useToast } from '@/design';
 import { getPublicEnv } from '@/lib/env';
 import { getSupabaseClient } from '@/lib/supabase';
@@ -29,13 +30,6 @@ export function SignUpScreen() {
       setFormError(parsed.error.issues[0]?.message ?? 'Formu kontrol et.');
       return;
     }
-    if (displayName) {
-      const name = DisplayNameSchema.safeParse(displayName);
-      if (!name.success) {
-        setFormError(name.error.issues[0]?.message ?? 'Görünen ad geçersiz.');
-        return;
-      }
-    }
     const supabase = getSupabaseClient();
     if (!supabase) {
       setFormError('Supabase yapılandırması eksik.');
@@ -47,29 +41,36 @@ export function SignUpScreen() {
     }
     setLoading(true);
     try {
-      const { error } = await supabase.auth.signUp({
+      const chosenName = parsed.data.display_name;
+      const { data, error } = await supabase.auth.signUp({
         email: parsed.data.email,
         password: parsed.data.password,
+        options: chosenName ? { data: { display_name: chosenName } } : undefined,
       });
       if (error) {
         logger.error('Kayıt başarısız', { code: error.code ?? 'auth.sign_up', cause: error.message });
         setFormError(mapAuthError(error));
         return;
       }
-      if (displayName) {
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .update({ display_name: displayName })
-          .eq('id', (await supabase.auth.getUser()).data.user?.id ?? '');
-        if (profileError) {
+      if (chosenName && data.session?.user) {
+        try {
+          await applySignupDisplayName({
+            userId: data.session.user.id,
+            metadata: data.session.user.user_metadata,
+          });
+        } catch (profileError) {
           logger.error('Profil adı güncellenemedi', {
             code: 'profile.update',
-            cause: profileError.message,
+            cause: profileError instanceof Error ? profileError.message : 'unknown',
           });
-          toast.show('Hesap oluştu; görünen ad sonra güncellenebilir.', 'danger');
+          toast.show('Hesap oluştu; görünen ad ilk girişte tamamlanır.', 'danger');
         }
       }
-      toast.show('Kayıt alındı. E-posta onayı açıksa kutunu kontrol et.');
+      toast.show(
+        data.session
+          ? 'Hesabın hazır. Kimliğin tribünde seni bekler.'
+          : 'Kayıt alındı. E-posta onayı açıksa kutunu kontrol et; görünen ad ilk girişte yazılır.',
+      );
       router.replace('/(auth)/sign-in');
     } catch (error) {
       logger.error('Kayıt istisnası', {

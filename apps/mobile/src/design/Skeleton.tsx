@@ -1,13 +1,14 @@
 import { View, StyleSheet } from 'react-native';
-import { colors, radii } from './tokens';
+import { radii } from './tokens';
+import { useColors } from './theme-context';
 
 export function Skeleton({ width = '100%', height = 16 }: { width?: number | `${number}%`; height?: number }) {
-  return <View style={[styles.block, { width, height }]} />;
+  const colors = useColors();
+  return <View style={[styles.block, { width, height, backgroundColor: colors.surfaceRaised }]} />;
 }
 
 const styles = StyleSheet.create({
   block: {
-    backgroundColor: colors.surfaceRaised,
     borderRadius: radii.sm,
   },
 });

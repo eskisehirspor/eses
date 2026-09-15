@@ -48,7 +48,7 @@ export function FeaturedStory({
           <LinearGradient colors={['transparent', 'rgba(3,3,4,0.94)']} style={styles.overlay} />
         ) : null}
         <View style={styles.onImage}>
-          <Text variant="overline" tone="accent">
+          <Text variant="caption" tone="accent">
             {category ?? 'Kulüp'}
           </Text>
           <Text variant="title">{headline}</Text>

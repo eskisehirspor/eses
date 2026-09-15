@@ -7,11 +7,12 @@ import {
   PageHeader,
   Screen,
   ScreenSkeleton,
+  SectionHeader,
   SegmentedControl,
 } from '@/design';
 import { toUserMessage } from '@/lib/errors';
 import { useNetwork } from '@/lib/network-context';
-import { classifyFixtures } from './classification';
+import { classifyFixtures, partitionClubFixtures } from './classification';
 import { useFixtures, useStandings } from './hooks';
 import { MatchCard, MatchRowPlaceholder } from './MatchCard';
 import { StandingsTable } from './StandingsTable';
@@ -50,6 +51,10 @@ export function MatchesScreen() {
   }
 
   const { upcoming, recent } = classifyFixtures(fixturesQuery.data ?? []);
+  const clubUpcoming = partitionClubFixtures(upcoming);
+  const clubRecent = partitionClubFixtures(recent);
+  const nextClub = clubUpcoming.club[0] ?? null;
+  const laterClub = clubUpcoming.club.slice(1);
   const standings = standingsQuery.data;
 
   return (
@@ -63,7 +68,7 @@ export function MatchesScreen() {
     >
       {isOffline ? <OfflineState onRetry={() => void refresh()} /> : null}
       <View>
-        <PageHeader title="Maç merkezi" subtitle="Yaklaşan · Sonuçlar · Puan durumu" />
+        <PageHeader title="Maçlar" subtitle="Yaklaşan · Sonuçlar · Puan durumu" />
         <SegmentedControl value={tab} options={TABS} onChange={setTab} />
       </View>
       {tab === 'upcoming' ? (
@@ -72,14 +77,23 @@ export function MatchesScreen() {
             <MatchRowPlaceholder mode="upcoming" />
             <EditorialEmpty
               title="Yaklaşan maç yok"
-              description="Tarih bloğu, armalar ve saat resmi kayıt girilince bu satır geometrisinde durur."
+              description="Fikstür kaydı gelince Eskişehirspor maçları burada durur."
             />
           </View>
         ) : (
           <View>
-            {upcoming.map((fixture) => (
+            {nextClub ? <MatchCard fixture={nextClub} featured /> : null}
+            {laterClub.map((fixture) => (
               <MatchCard key={fixture.id} fixture={fixture} />
             ))}
+            {clubUpcoming.rest.length > 0 ? (
+              <>
+                <SectionHeader title="Grup fikstürü" quiet />
+                {clubUpcoming.rest.map((fixture) => (
+                  <MatchCard key={fixture.id} fixture={fixture} compact />
+                ))}
+              </>
+            ) : null}
           </View>
         )
       ) : null}
@@ -89,14 +103,22 @@ export function MatchesScreen() {
             <MatchRowPlaceholder mode="result" />
             <EditorialEmpty
               title="Sonuç yok"
-              description="Tamamlanan maç kaydı girilince skor bu satırda öne çıkar."
+              description="Biten Eskişehirspor maçları burada görünür."
             />
           </View>
         ) : (
           <View>
-            {recent.map((fixture) => (
+            {clubRecent.club.map((fixture) => (
               <MatchCard key={fixture.id} fixture={fixture} emphasizeScore />
             ))}
+            {clubRecent.rest.length > 0 ? (
+              <>
+                <SectionHeader title="Grup sonuçları" quiet />
+                {clubRecent.rest.map((fixture) => (
+                  <MatchCard key={fixture.id} fixture={fixture} emphasizeScore compact />
+                ))}
+              </>
+            ) : null}
           </View>
         )
       ) : null}
@@ -111,7 +133,7 @@ export function MatchesScreen() {
             <StandingsTable rows={[]} competitionLabel="Aktif lig kaydı yok" />
             <EditorialEmpty
               title="Puan durumu yok"
-              description="POS · TEAM · P · W · D · L · GD · PTS kolonları lig kaydı gelince dolar."
+              description="Lig tablosu resmi kayıt gelince dolar."
             />
           </View>
         ) : (

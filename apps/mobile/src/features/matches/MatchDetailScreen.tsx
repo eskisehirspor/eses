@@ -1,5 +1,5 @@
 import { View } from 'react-native';
-import { MATCH_EVENT_LABELS, deriveMatchClock, displaysScore, type MatchEventType } from '@eskisehirspor/shared';
+import { MATCH_EVENT_LABELS, deriveMatchClock, displaysScore, formatKickoffLabel, type MatchEventType } from '@eskisehirspor/shared';
 import {
   EditorialEmpty,
   ErrorState,
@@ -9,11 +9,12 @@ import {
   SectionHeader,
   Text,
 } from '@/design';
-import { formatMatchDay, formatTime } from '@/lib/format';
 import { toUserMessage } from '@/lib/errors';
 import { useNetwork } from '@/lib/network-context';
 import { useFixture, useMatchEvents, useServerAlignedClock } from './hooks';
 import { MatchScoreboard } from './MatchScoreboard';
+import { AwayTripChip } from './AwayTripSheet';
+import { fixtureAwayTrip } from './away-trip';
 
 export function MatchDetailScreen({ id }: { id: string }) {
   const { isOffline, refresh } = useNetwork();
@@ -59,6 +60,7 @@ export function MatchDetailScreen({ id }: { id: string }) {
     nowMs,
   });
   const events = eventsQuery.data ?? [];
+  const awayTrip = fixtureAwayTrip(fixture);
 
   return (
     <Screen
@@ -77,9 +79,7 @@ export function MatchDetailScreen({ id }: { id: string }) {
       />
       <View>
         <SectionHeader title="Maç bilgisi" quiet />
-        <Text muted>
-          {formatMatchDay(fixture.kickoff_at)} · {formatTime(fixture.kickoff_at)}
-        </Text>
+        <Text muted>{formatKickoffLabel(fixture.kickoff_at)}</Text>
         {fixture.venue ? (
           <Text muted>
             {fixture.venue.name}
@@ -90,6 +90,7 @@ export function MatchDetailScreen({ id }: { id: string }) {
             Stadyum kaydı yok.
           </Text>
         )}
+        {awayTrip ? <AwayTripChip fixture={fixture} trip={awayTrip} /> : null}
       </View>
       <View>
         <SectionHeader title="Olaylar" quiet />
@@ -100,7 +101,7 @@ export function MatchDetailScreen({ id }: { id: string }) {
           />
         ) : (
           events.map((event) => (
-            <Text key={event.id} muted>
+            <Text key={event.id}>
               {event.minute != null ? `${event.minute}${event.extra_minute ? `+${event.extra_minute}` : ''}'` : '—'}{' '}
               {MATCH_EVENT_LABELS[event.event_type as MatchEventType] ?? event.event_type}
             </Text>

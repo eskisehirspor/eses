@@ -24,7 +24,7 @@ export function StoryRow({
       </View>
       <View style={styles.copy}>
         {category ? (
-          <Text variant="overline" muted>
+          <Text variant="caption" muted>
             {category}
           </Text>
         ) : null}

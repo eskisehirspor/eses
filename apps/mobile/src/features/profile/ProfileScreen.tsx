@@ -1,7 +1,7 @@
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { RoleSchema, type Role } from '@eskisehirspor/shared';
+import { RoleSchema, type AppThemeMode, type Role } from '@eskisehirspor/shared';
 import {
   Button,
   ClubIdentity,
@@ -20,53 +20,66 @@ import { useAuth } from '@/lib/auth-context';
 import { useNetwork } from '@/lib/network-context';
 import { getSupabaseClient } from '@/lib/supabase';
 import { logger } from '@/lib/logger';
-
-type ProfileRow = {
-  display_name: string;
-  preferred_locale: string;
-  theme_preference: string;
-};
+import { applySignupDisplayName, fetchOwnProfile, updateOwnProfile } from './api';
+import { ProfileEditor, profileSaveMessage } from './ProfileEditor';
 
 export function ProfileScreen() {
   const { session, isReady, isConfigured, errorMessage } = useAuth();
   const { isOffline, refresh } = useNetwork();
   const toast = useToast();
+  const queryClient = useQueryClient();
+  const [editing, setEditing] = useState(false);
   const [signOutOpen, setSignOutOpen] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
 
+  const userId = session?.user.id;
   const profileQuery = useQuery({
-    queryKey: ['profile', session?.user.id],
-    enabled: Boolean(session?.user.id) && isConfigured,
-    queryFn: async (): Promise<{ profile: ProfileRow; roles: Role[] }> => {
+    queryKey: ['profile', userId],
+    enabled: Boolean(userId) && isConfigured,
+    queryFn: async () => {
       const supabase = getSupabaseClient();
-      if (!supabase || !session?.user.id) {
+      if (!supabase || !userId || !session) {
         throw new Error('missing_client');
       }
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('display_name, preferred_locale, theme_preference')
-        .eq('id', session.user.id)
-        .maybeSingle();
-      if (profileError) {
-        logger.error('Profil okunamadı', { code: 'profile.read', cause: profileError.message });
-        throw profileError;
+      try {
+        await applySignupDisplayName({
+          userId,
+          metadata: session.user.user_metadata,
+        });
+      } catch (error) {
+        logger.error('Kayıt adı senkronu atlandı', {
+          code: 'profile.sync',
+          cause: error instanceof Error ? error.message : 'unknown',
+        });
       }
+      const profile = await fetchOwnProfile(userId);
       const { data: roleRows, error: roleError } = await supabase
         .from('user_roles')
         .select('role')
-        .eq('user_id', session.user.id);
+        .eq('user_id', userId);
       if (roleError) {
         logger.error('Roller okunamadı', { code: 'roles.read', cause: roleError.message });
         throw roleError;
       }
-      const roles = (roleRows ?? [])
+      const roles: Role[] = (roleRows ?? [])
         .map((row) => RoleSchema.safeParse(row.role))
         .filter((result) => result.success)
         .map((result) => result.data);
-      if (!profile) {
-        throw new Error('profile_missing');
-      }
       return { profile, roles };
+    },
+  });
+
+  const saveMutation = useMutation({
+    mutationFn: async (input: { display_name: string; theme_preference: AppThemeMode }) => {
+      if (!userId) {
+        throw new Error('missing_client');
+      }
+      return updateOwnProfile(userId, input);
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['profile', userId] });
+      setEditing(false);
+      toast.show('Kimliğin güncellendi.');
     },
   });
 
@@ -82,7 +95,7 @@ export function ProfileScreen() {
     return (
       <Screen scroll>
         {isOffline ? <OfflineState onRetry={() => void refresh()} /> : null}
-        <ClubIdentity title="Taraftar kimliği" subtitle="ES ES hesabın" kicker="Giriş" />
+        <ClubIdentity title="Taraftar kimliği" subtitle="Eskişehirspor hesabın" kicker="Giriş" />
         <Text muted>{errorMessage ?? 'Supabase yapılandırması eksik.'}</Text>
         <IdentityCard />
         <SectionHeader title="Hazırlanan katman" quiet />
@@ -99,7 +112,7 @@ export function ProfileScreen() {
     return (
       <Screen scroll>
         {isOffline ? <OfflineState onRetry={() => void refresh()} /> : null}
-        <ClubIdentity title="Taraftar kimliği" subtitle="ES ES hesabın" kicker="Giriş" />
+        <ClubIdentity title="Taraftar kimliği" subtitle="Eskişehirspor hesabın" kicker="Giriş" />
         <Text muted>
           Haber ve maç herkese açık. Kimlik, kart ve tribün geçmişi oturuma bağlıdır.
         </Text>
@@ -159,16 +172,52 @@ export function ProfileScreen() {
   return (
     <Screen scroll>
       {isOffline ? <OfflineState onRetry={() => void refresh()} /> : null}
-        <ClubIdentity
-          compact
-          title={profile?.display_name ?? 'Taraftar'}
-          subtitle={session.user.email ?? ''}
-          kicker="Taraftar"
+      <ClubIdentity
+        compact
+        title={profile?.display_name ?? 'Taraftar'}
+        subtitle={session.user.email ?? ''}
+        kicker="Taraftar"
+      />
+      <IdentityCard supporterName={profile?.display_name} detail={session.user.email ?? undefined} />
+      {profile && editing ? (
+        <ProfileEditor
+          key={`${profile.display_name}-${profile.theme_preference}`}
+          profile={profile}
+          saving={saveMutation.isPending}
+          errorMessage={saveMutation.isError ? profileSaveMessage(saveMutation.error) : null}
+          onSave={(input) => {
+            if (isOffline) {
+              toast.show('Kimliği kaydetmek için internet gerekli.', 'danger');
+              return;
+            }
+            saveMutation.mutate(input);
+          }}
         />
-      <IdentityCard />
+      ) : (
+        <SectionHeader
+          eyebrow="Kimlik"
+          title="Tribündeki adın"
+          actionLabel="Profili düzenle"
+          onAction={() => {
+            saveMutation.reset();
+            setEditing(true);
+          }}
+        />
+      )}
+      {editing ? (
+        <Button
+          label="Vazgeç"
+          variant="ghost"
+          disabled={saveMutation.isPending}
+          onPress={() => {
+            saveMutation.reset();
+            setEditing(false);
+          }}
+        />
+      ) : null}
       <SectionHeader title="Kimlik katmanı" quiet />
       <FutureSlot kicker="Seviye" title="Taraftar kademesi" detail="Henüz hesaplanmaz." />
-      <FutureSlot kicker="XP" title="ES ES puanı" detail="Ledger yok." />
+      <FutureSlot kicker="XP" title="Puan" detail="Ledger henüz açık değil." />
       <FutureSlot kicker="Rozet" title="Koleksiyon" detail="Boş tutulur." />
       <FutureSlot kicker="Stadyum" title="Varlık kayıtları" detail="Doğrulama yok." />
       <FutureSlot kicker="Geçmiş" title="Maç geçmişi" detail="Resmi kayıt bağlanınca listelenir." />

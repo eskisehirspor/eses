@@ -1,5 +1,6 @@
 import { StyleSheet, TextInput, type TextInputProps, View } from 'react-native';
-import { colors, radii, spacing, touchTarget, typography } from './tokens';
+import { radii, spacing, touchTarget, typography } from './tokens';
+import { useColors } from './theme-context';
 import { Text } from './Text';
 
 export function Input({
@@ -7,12 +8,21 @@ export function Input({
   error,
   ...rest
 }: TextInputProps & { label: string; error?: string }) {
+  const colors = useColors();
   return (
     <View style={styles.wrap}>
       <Text variant="caption">{label}</Text>
       <TextInput
         placeholderTextColor={colors.textMuted}
-        style={styles.input}
+        style={[
+          styles.input,
+          {
+            borderColor: colors.border,
+            color: colors.text,
+            backgroundColor: colors.surface,
+            fontFamily: typography.family.ui,
+          },
+        ]}
         autoCapitalize="none"
         {...rest}
       />
@@ -32,11 +42,8 @@ const styles = StyleSheet.create({
   input: {
     minHeight: touchTarget,
     borderWidth: 1,
-    borderColor: colors.border,
     borderRadius: radii.md,
     paddingHorizontal: spacing.md,
-    color: colors.text,
     fontSize: typography.size.md,
-    backgroundColor: colors.surface,
   },
 });

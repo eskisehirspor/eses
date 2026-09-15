@@ -7,7 +7,8 @@ import {
   type ReactNode,
 } from 'react';
 import { StyleSheet, View } from 'react-native';
-import { colors, radii, spacing } from './tokens';
+import { radii, spacing } from './tokens';
+import { useColors } from './theme-context';
 import { Text } from './Text';
 
 type Toast = { id: number; message: string; tone: 'default' | 'danger' };
@@ -17,6 +18,28 @@ type ToastContextValue = {
 };
 
 const ToastContext = createContext<ToastContextValue | null>(null);
+
+function ToastStack({ toasts }: { toasts: Toast[] }) {
+  const colors = useColors();
+  return (
+    <View pointerEvents="none" style={styles.stack}>
+      {toasts.map((toast) => (
+        <View
+          key={toast.id}
+          style={[
+            styles.toast,
+            {
+              backgroundColor: colors.surfaceRaised,
+              borderColor: toast.tone === 'danger' ? colors.danger : colors.border,
+            },
+          ]}
+        >
+          <Text>{toast.message}</Text>
+        </View>
+      ))}
+    </View>
+  );
+}
 
 export function ToastProvider({ children }: { children: ReactNode }) {
   const [toasts, setToasts] = useState<Toast[]>([]);
@@ -34,13 +57,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   return (
     <ToastContext.Provider value={value}>
       {children}
-      <View pointerEvents="none" style={styles.stack}>
-        {toasts.map((toast) => (
-          <View key={toast.id} style={[styles.toast, toast.tone === 'danger' && styles.danger]}>
-            <Text>{toast.message}</Text>
-          </View>
-        ))}
-      </View>
+      <ToastStack toasts={toasts} />
     </ToastContext.Provider>
   );
 }
@@ -62,13 +79,8 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
   },
   toast: {
-    backgroundColor: colors.surfaceRaised,
     borderRadius: radii.md,
     padding: spacing.md,
     borderWidth: 1,
-    borderColor: colors.border,
-  },
-  danger: {
-    borderColor: colors.danger,
   },
 });

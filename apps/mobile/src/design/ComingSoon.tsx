@@ -1,6 +1,7 @@
 import { View, StyleSheet } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { colors, iconSize, spacing } from './tokens';
+import { iconSize, spacing } from './tokens';
+import { useColors } from './theme-context';
 import { Text } from './Text';
 import { ClubCrest } from './ClubCrest';
 import type { IoniconName } from './icons';
@@ -16,10 +17,11 @@ export function ComingSoon({
   description: string;
   items: readonly { icon: IoniconName; label: string; detail: string }[];
 }) {
+  const colors = useColors();
   return (
     <View style={styles.wrap}>
       <ClubCrest size="lg" />
-      <Text variant="overline" tone="accent">
+      <Text variant="caption" tone="accent">
         {kicker}
       </Text>
       <Text variant="title" style={styles.title}>
@@ -31,7 +33,7 @@ export function ComingSoon({
       <View style={styles.list}>
         {items.map((item) => (
           <View key={item.label} style={styles.row}>
-            <View style={styles.iconWrap}>
+            <View style={[styles.iconWrap, { backgroundColor: colors.redSoft }]}>
               <Ionicons name={item.icon} size={iconSize.md} color={colors.red} />
             </View>
             <View style={styles.rowCopy}>
@@ -68,11 +70,10 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   iconWrap: {
-    width: 36,
-    height: 36,
+    width: 44,
+    height: 44,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: colors.redSoft,
     borderRadius: 8,
   },
   rowCopy: {

@@ -7,6 +7,17 @@ export type AdminTeam = {
   short_name: string;
   slug: string;
   is_eskisehirspor: boolean;
+  crest_path?: string | null;
+};
+
+export type AdminTeamCrestRow = {
+  id: string;
+  name: string;
+  short_name: string;
+  slug: string;
+  is_eskisehirspor: boolean;
+  crest_path: string | null;
+  provider_team_id: string | null;
 };
 
 export type AdminPlayer = {
@@ -49,6 +60,19 @@ function asTeam(value: AdminTeam | AdminTeam[] | null): AdminTeam {
     throw new Error('missing_team');
   }
   return team;
+}
+
+export async function listAdminTeams(): Promise<AdminTeamCrestRow[]> {
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase
+    .from('teams')
+    .select('id, name, short_name, slug, is_eskisehirspor, crest_path, provider_team_id')
+    .order('name', { ascending: true });
+  if (error) {
+    logger.error('Admin takım listesi', { code: 'admin.teams.list', cause: error.message });
+    throw error;
+  }
+  return data ?? [];
 }
 
 export async function listAdminFixtures(): Promise<AdminFixtureListRow[]> {

@@ -1,14 +1,17 @@
 import { Stack } from 'expo-router';
-import { colors } from '@/design/tokens';
+import { typography } from '@/design/tokens';
+import { useColors } from '@/design/theme-context';
 
 export default function NewsStackLayout() {
+  const colors = useColors();
   return (
     <Stack
       screenOptions={{
-        headerStyle: { backgroundColor: colors.black },
-        headerTintColor: colors.white,
+        headerStyle: { backgroundColor: colors.surface },
+        headerTintColor: colors.text,
         headerTitleStyle: {
-          fontFamily: 'Oswald_600SemiBold',
+          fontFamily: typography.family.ui,
+          fontWeight: typography.weight.semibold,
         },
         headerShadowVisible: false,
         contentStyle: { backgroundColor: colors.background },

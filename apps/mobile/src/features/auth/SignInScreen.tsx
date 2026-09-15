@@ -2,6 +2,7 @@ import { Link } from 'expo-router';
 import { useState } from 'react';
 import { SignInSchema, isSocialAuthConfigured } from '@eskisehirspor/shared';
 import { Button, Card, Screen, Text, Input, useToast, ErrorState, OfflineState, ClubCrest } from '@/design';
+import { applySignupDisplayName } from '@/features/profile/api';
 import { getPublicEnv } from '@/lib/env';
 import { getSupabaseClient } from '@/lib/supabase';
 import { mapAuthError } from '@/lib/auth-errors';
@@ -39,11 +40,24 @@ export function SignInScreen() {
     }
     setLoading(true);
     try {
-      const { error } = await supabase.auth.signInWithPassword(parsed.data);
+      const { data, error } = await supabase.auth.signInWithPassword(parsed.data);
       if (error) {
         logger.error('Giriş başarısız', { code: error.code ?? 'auth.sign_in', cause: error.message });
         setFormError(mapAuthError(error));
         return;
+      }
+      if (data.user) {
+        try {
+          await applySignupDisplayName({
+            userId: data.user.id,
+            metadata: data.user.user_metadata,
+          });
+        } catch (syncError) {
+          logger.error('Kayıt adı senkronu atlandı', {
+            code: 'profile.sync',
+            cause: syncError instanceof Error ? syncError.message : 'unknown',
+          });
+        }
       }
       toast.show('Giriş başarılı.');
     } catch (error) {
@@ -69,7 +83,7 @@ export function SignInScreen() {
     <Screen scroll keyboard>
       {isOffline ? <OfflineState /> : null}
       <ClubCrest size="lg" />
-      <Text variant="overline" tone="accent">
+      <Text variant="caption" tone="accent">
         Eskişehirspor
       </Text>
       <Text variant="title">Giriş</Text>

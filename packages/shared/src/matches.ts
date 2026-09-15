@@ -56,6 +56,23 @@ export function displaysScore(status: FixtureStatus): boolean {
   return status === 'finished' || status === 'live' || status === 'halftime';
 }
 
+export const CLUB_DISPLAY_NAME = 'Eskişehirspor';
+
+export function displayTeamName(team: {
+  name: string;
+  short_name?: string | null;
+  is_eskisehirspor?: boolean;
+}): string {
+  if (team.is_eskisehirspor) {
+    return CLUB_DISPLAY_NAME;
+  }
+  const label = team.name.trim() || (team.short_name ?? '').trim();
+  if (label === 'ES ES') {
+    return CLUB_DISPLAY_NAME;
+  }
+  return label;
+}
+
 export const StandingRowSchema = z.object({
   competition_id: z.string().uuid(),
   team_id: z.string().uuid(),

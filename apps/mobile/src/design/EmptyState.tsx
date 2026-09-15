@@ -1,6 +1,7 @@
 import { View, StyleSheet } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { colors, iconSize, spacing } from './tokens';
+import { iconSize, spacing } from './tokens';
+import { useColors } from './theme-context';
 import { Text } from './Text';
 import { Button } from './Button';
 import type { IoniconName } from './icons';
@@ -20,6 +21,7 @@ export function EmptyState({
   compact?: boolean;
   icon?: IoniconName;
 }) {
+  const colors = useColors();
   return (
     <View style={[styles.wrap, compact && styles.compact]}>
       <Ionicons name={icon} size={compact ? iconSize.lg : iconSize.xl} color={colors.red} />

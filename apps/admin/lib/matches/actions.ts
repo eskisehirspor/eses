@@ -5,6 +5,7 @@ import { redirect } from 'next/navigation';
 import {
   CATALOG_FIXTURES,
   CATALOG_PLAYERS,
+  CATALOG_STANDINGS,
   CATALOG_TEAMS,
   CATALOG_VENUE,
   FOOTBALL_CATALOG_META,
@@ -12,6 +13,7 @@ import {
   canOperateLiveMatch,
   catalogKickoffIso,
 } from '@eskisehirspor/shared';
+import { syncCatalogCrests } from '@/lib/matches/crests';
 import { getSessionRoles } from '@/lib/auth/session';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { toAdminErrorMessage } from '@/lib/errors';
@@ -63,8 +65,8 @@ export async function importOfficialCatalog() {
   const { data: existingCompetition } = await supabase
     .from('competitions')
     .select('id')
-    .eq('provider_code', 'tff')
-    .eq('provider_competition_id', 'nesine-3-lig-02-2026-2027')
+    .eq('provider_code', FOOTBALL_CATALOG_META.providerCode)
+    .eq('provider_competition_id', FOOTBALL_CATALOG_META.providerCompetitionId)
     .maybeSingle();
 
   let competitionId = existingCompetition?.id;
@@ -75,8 +77,8 @@ export async function importOfficialCatalog() {
         name: FOOTBALL_CATALOG_META.competitionName,
         season_label: FOOTBALL_CATALOG_META.seasonLabel,
         is_active: true,
-        provider_code: 'tff',
-        provider_competition_id: 'nesine-3-lig-02-2026-2027',
+        provider_code: FOOTBALL_CATALOG_META.providerCode,
+        provider_competition_id: FOOTBALL_CATALOG_META.providerCompetitionId,
       })
       .select('id')
       .single();
@@ -120,9 +122,8 @@ export async function importOfficialCatalog() {
           short_name: team.shortName,
           slug: team.slug,
           is_eskisehirspor: Boolean(team.isEskisehirspor),
-          crest_path: null,
-          provider_code: 'manual',
-          provider_team_id: team.slug,
+          provider_code: FOOTBALL_CATALOG_META.providerCode,
+          provider_team_id: team.providerTeamId,
         },
         { onConflict: 'slug' },
       )
@@ -134,6 +135,8 @@ export async function importOfficialCatalog() {
     }
     teamIds.set(data.slug, data.id);
   }
+
+  await syncCatalogCrests(supabase, teamIds);
 
   const clubId = teamIds.get('eskisehirspor');
   if (!clubId) {
@@ -169,6 +172,28 @@ export async function importOfficialCatalog() {
     }
   }
 
+  const { data: staleFixtures, error: staleError } = await supabase
+    .from('fixtures')
+    .select('id, status, provider_fixture_id')
+    .eq('competition_id', competitionId);
+  if (staleError) {
+    logger.error('Eski fikstür okunamadı', { code: 'catalog.fixtures.read', cause: staleError.message });
+    redirect(`/console/matches?error=${encodeURIComponent(toAdminErrorMessage(staleError))}`);
+  }
+  const catalogIds = new Set(CATALOG_FIXTURES.map((fixture) => fixture.providerFixtureId));
+  for (const row of staleFixtures ?? []) {
+    if (row.status === 'live' || row.status === 'halftime') {
+      continue;
+    }
+    if (catalogIds.has(row.provider_fixture_id)) {
+      continue;
+    }
+    const { error: deleteError } = await supabase.from('fixtures').delete().eq('id', row.id);
+    if (deleteError) {
+      logger.error('Eski maç silinemedi', { code: 'catalog.fixture.delete', cause: deleteError.message });
+    }
+  }
+
   for (const fixture of CATALOG_FIXTURES) {
     const homeId = teamIds.get(fixture.homeSlug);
     const awayId = teamIds.get(fixture.awaySlug);
@@ -177,17 +202,7 @@ export async function importOfficialCatalog() {
     }
     const kickoff = catalogKickoffIso(fixture.date, fixture.kickoffTime);
     const isHome = fixture.homeSlug === 'eskisehirspor';
-    const providerFixtureId = `2026-2027-g2-${fixture.roundLabel}`;
-    const { data: existingFixture } = await supabase
-      .from('fixtures')
-      .select('id')
-      .eq('provider_code', 'manual')
-      .eq('provider_fixture_id', providerFixtureId)
-      .maybeSingle();
-    if (existingFixture) {
-      continue;
-    }
-    const { error } = await supabase.from('fixtures').insert({
+    const payload = {
       competition_id: competitionId,
       venue_id: isHome ? venueId : null,
       home_team_id: homeId,
@@ -195,14 +210,58 @@ export async function importOfficialCatalog() {
       kickoff_at: kickoff,
       status: fixture.status,
       round_label: fixture.roundLabel,
-      home_score: fixture.homeScore ?? 0,
-      away_score: fixture.awayScore ?? 0,
-      provider_code: 'manual',
-      provider_fixture_id: providerFixtureId,
-      live_source: 'manual',
-    });
+      home_score: fixture.homeScore,
+      away_score: fixture.awayScore,
+      provider_code: FOOTBALL_CATALOG_META.providerCode,
+      provider_fixture_id: fixture.providerFixtureId,
+      live_source: 'manual' as const,
+    };
+    const { data: existingFixture } = await supabase
+      .from('fixtures')
+      .select('id, status')
+      .eq('provider_code', FOOTBALL_CATALOG_META.providerCode)
+      .eq('provider_fixture_id', fixture.providerFixtureId)
+      .maybeSingle();
+    if (existingFixture?.status === 'live' || existingFixture?.status === 'halftime') {
+      continue;
+    }
+    if (existingFixture) {
+      const { error } = await supabase.from('fixtures').delete().eq('id', existingFixture.id);
+      if (error) {
+        logger.error('Maç yenilenemedi', { code: 'catalog.fixture.replace', cause: error.message });
+        continue;
+      }
+    }
+    const { error } = await supabase.from('fixtures').insert(payload);
     if (error) {
       logger.error('Maç yazılamadı', { code: 'catalog.fixture', cause: error.message });
+    }
+  }
+
+  const { error: clearStandingsError } = await supabase.from('standings').delete().eq('competition_id', competitionId);
+  if (clearStandingsError) {
+    logger.error('Puan durumu temizlenemedi', { code: 'catalog.standing.clear', cause: clearStandingsError.message });
+  }
+
+  for (const standing of CATALOG_STANDINGS) {
+    const teamId = teamIds.get(standing.slug);
+    if (!teamId) {
+      continue;
+    }
+    const { error } = await supabase.from('standings').insert({
+      competition_id: competitionId,
+      team_id: teamId,
+      position: standing.position,
+      played: standing.played,
+      wins: standing.wins,
+      draws: standing.draws,
+      losses: standing.losses,
+      goals_for: standing.goalsFor,
+      goals_against: standing.goalsAgainst,
+      points: standing.points,
+    });
+    if (error) {
+      logger.error('Puan durumu yazılamadı', { code: 'catalog.standing', cause: error.message });
     }
   }
 

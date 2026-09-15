@@ -7,9 +7,14 @@ import {
   PROFILE_CLIENT_WRITABLE_FIELDS,
   ProfileUpdateSchema,
   SignInSchema,
+  buildOwnProfileUpdate,
+  pendingSignupDisplayName,
+  placeholderDisplayName,
+  resolveAppTheme,
 } from './profile';
 import { DEFAULT_ROLE, hasStaffAccess, isStaffRole, ROLES } from './roles';
 import { XP_ACTION_KEYS } from './xp-actions';
+import { CLUB_DISPLAY_NAME, displayTeamName } from './matches';
 
 describe('roles', () => {
   it('defaults new accounts to user', () => {
@@ -71,6 +76,42 @@ describe('profile authorization assumptions', () => {
     expect(parsed.success).toBe(false);
   });
 
+  it('whitelists own profile updates and keeps locale tr', () => {
+    const payload = buildOwnProfileUpdate({
+      display_name: '  Kırmızı Şimşek  ',
+      theme_preference: 'dark',
+    });
+    expect(payload).toEqual({
+      display_name: 'Kırmızı Şimşek',
+      theme_preference: 'dark',
+      preferred_locale: 'tr',
+    });
+    expect(payload).not.toHaveProperty('deleted_at');
+    expect(payload).not.toHaveProperty('avatar_path');
+    expect(() =>
+      buildOwnProfileUpdate({ display_name: 'ab', theme_preference: 'dark' }),
+    ).toThrow();
+  });
+
+  it('applies signup metadata only onto the trigger placeholder name', () => {
+    const userId = 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11';
+    expect(placeholderDisplayName(userId)).toBe('Taraftara0eebc99');
+    expect(
+      pendingSignupDisplayName({
+        userId,
+        currentDisplayName: 'Taraftara0eebc99',
+        metadata: { display_name: 'Tribün 16' },
+      }),
+    ).toBe('Tribün 16');
+    expect(
+      pendingSignupDisplayName({
+        userId,
+        currentDisplayName: 'Kırmızı Siyah',
+        metadata: { display_name: 'Tribün 16' },
+      }),
+    ).toBeNull();
+  });
+
   it('validates sign-in payload', () => {
     expect(SignInSchema.safeParse({ email: 'bad', password: 'x' }).success).toBe(false);
     expect(SignInSchema.safeParse({ email: 'taraftar@example.com', password: 'secret' }).success).toBe(
@@ -106,5 +147,27 @@ describe('shared contracts', () => {
       apple: false,
       google: false,
     });
+  });
+});
+
+describe('club display name', () => {
+  it('never shows ES ES to users', () => {
+    expect(displayTeamName({ name: 'Eskişehirspor', short_name: 'ES ES', is_eskisehirspor: true })).toBe(
+      CLUB_DISPLAY_NAME,
+    );
+    expect(displayTeamName({ name: 'ES ES', short_name: 'ES ES' })).toBe(CLUB_DISPLAY_NAME);
+    expect(displayTeamName({ name: 'Uşak Spor', short_name: 'Uşak' })).toBe('Uşak Spor');
+  });
+});
+
+describe('theme preference', () => {
+  it('maps legacy system to dark and keeps light/dark', () => {
+    expect(resolveAppTheme('system')).toBe('dark');
+    expect(resolveAppTheme(null)).toBe('dark');
+    expect(resolveAppTheme('dark')).toBe('dark');
+    expect(resolveAppTheme('light')).toBe('light');
+    expect(buildOwnProfileUpdate({ display_name: 'Taraftar 16', theme_preference: 'system' }).theme_preference).toBe(
+      'dark',
+    );
   });
 });

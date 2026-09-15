@@ -1,12 +1,13 @@
 import { Image } from 'expo-image';
 import { StyleSheet, View } from 'react-native';
 import { clubCrest } from '@/brand/assets';
+import { crestSize } from './tokens';
 
 const sizes = {
-  xs: 28,
-  sm: 36,
-  md: 52,
-  lg: 72,
+  xs: crestSize.standings,
+  sm: crestSize.row,
+  md: crestSize.rowClub,
+  lg: crestSize.featured,
   xl: 96,
 } as const;
 

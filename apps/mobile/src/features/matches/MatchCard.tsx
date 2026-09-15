@@ -1,75 +1,138 @@
 import { StyleSheet, View } from 'react-native';
-import { router } from 'expo-router';
-import { classifyFixtureStatus, displaysScore, FIXTURE_STATUS_LABELS } from '@eskisehirspor/shared';
+import { classifyFixtureStatus, displayTeamName, displaysScore, FIXTURE_STATUS_LABELS } from '@eskisehirspor/shared';
 import { ClubCrest, DateStamp, PressableScale, TeamMark, Text } from '@/design';
-import { colors, spacing } from '@/design/tokens';
-import { formatTime } from '@/lib/format';
+import { spacing, typography } from '@/design/tokens';
+import { useColors } from '@/design/theme-context';
+import { formatKickoffTime } from '@/lib/format';
+import { router } from 'expo-router';
 import type { FixtureRecord } from './api';
+import { AwayTripChip } from './AwayTripSheet';
+import { fixtureAwayTrip } from './away-trip';
 
-export function MatchCard({ fixture, emphasizeScore = false }: { fixture: FixtureRecord; emphasizeScore?: boolean }) {
+export function MatchCard({
+  fixture,
+  emphasizeScore = false,
+  featured = false,
+  compact = false,
+}: {
+  fixture: FixtureRecord;
+  emphasizeScore?: boolean;
+  featured?: boolean;
+  compact?: boolean;
+}) {
+  const colors = useColors();
   const showScore = displaysScore(fixture.status);
   const live = classifyFixtureStatus(fixture.status) === 'live';
-  const venueSide = fixture.home_team.is_eskisehirspor
-    ? 'İç saha'
-    : fixture.away_team.is_eskisehirspor
-      ? 'Deplasman'
-      : null;
+  const clubMatch = fixture.home_team.is_eskisehirspor || fixture.away_team.is_eskisehirspor;
+  const clubHome = fixture.home_team.is_eskisehirspor;
+  const clubAway = fixture.away_team.is_eskisehirspor;
+  const homeName = displayTeamName(fixture.home_team);
+  const awayName = displayTeamName(fixture.away_team);
+  const kickoffTime = formatKickoffTime(fixture.kickoff_at);
+  const awayTrip = fixtureAwayTrip(fixture);
+  const statusLabel = live ? 'Canlı' : FIXTURE_STATUS_LABELS[fixture.status];
+  const venueLabel = clubHome ? 'Ev sahibi' : clubAway ? 'Deplasman' : null;
+  const meta = [
+    venueLabel,
+    fixture.round_label,
+    compact ? null : fixture.competition.name,
+    showScore ? null : kickoffTime,
+    compact ? statusLabel : null,
+  ].filter(Boolean);
+
+  const treatmentStyle =
+    clubHome && !compact
+      ? { backgroundColor: colors.homeTreatment, borderLeftColor: colors.red, borderLeftWidth: 3 }
+      : clubAway && !compact
+        ? { backgroundColor: colors.awayTreatment, borderLeftColor: colors.border, borderLeftWidth: 3 }
+        : featured
+          ? { borderLeftColor: colors.red, borderLeftWidth: 2 }
+          : null;
 
   return (
-    <PressableScale
-      onPress={() => router.push(`/maclar/${fixture.id}`)}
-      accessibilityRole="button"
-      accessibilityLabel={`${fixture.home_team.name} ${fixture.away_team.name}`}
-      style={styles.row}
+    <View
+      style={[
+        {
+          borderBottomWidth: StyleSheet.hairlineWidth,
+          borderBottomColor: colors.borderSubtle,
+          paddingLeft: treatmentStyle ? spacing.sm : 0,
+          marginLeft: treatmentStyle ? -spacing.sm : 0,
+        },
+        treatmentStyle,
+        compact ? { opacity: 0.92 } : null,
+      ]}
     >
-      <DateStamp iso={fixture.kickoff_at} />
-      <View style={styles.body}>
-        <Text variant="overline" muted>
-          {fixture.competition.name}
-          {live ? '  ·  CANLI' : ''}
-        </Text>
-        <View style={styles.teams}>
-          <View style={styles.side}>
+      <PressableScale
+        onPress={() => router.push(`/maclar/${fixture.id}`)}
+        accessibilityRole="button"
+        accessibilityLabel={`${homeName} ${awayName}${venueLabel ? ` ${venueLabel}` : ''}${kickoffTime ? ` ${kickoffTime}` : ''}`}
+        style={styles.row}
+      >
+        <DateStamp iso={fixture.kickoff_at} />
+        <View style={styles.body}>
+          <Text variant="caption" muted numberOfLines={1}>
+            {featured ? 'Sıradaki  ·  ' : ''}
+            {meta.join('  ·  ')}
+            {live && !compact ? '  ·  Canlı' : ''}
+          </Text>
+          <View style={styles.teamRow}>
             <TeamMark
-              name={fixture.home_team.name}
+              name={homeName}
               shortName={fixture.home_team.short_name}
               isClub={fixture.home_team.is_eskisehirspor}
               crestUri={fixture.home_team.crest_path}
-              size="sm"
+              size={fixture.home_team.is_eskisehirspor ? 'md' : 'sm'}
             />
-            <Text numberOfLines={1} style={styles.name}>
-              {fixture.home_team.short_name}
+            <Text
+              numberOfLines={1}
+              style={[
+                styles.name,
+                { color: colors.text },
+                fixture.home_team.is_eskisehirspor && styles.clubName,
+                compact && !clubMatch && { color: colors.textSecondary },
+              ]}
+            >
+              {homeName}
             </Text>
-          </View>
-          <View style={styles.mid}>
             {showScore ? (
-              <Text variant={emphasizeScore ? 'title' : 'subtitle'}>
-                {fixture.home_score ?? '–'}–{fixture.away_score ?? '–'}
+              <Text style={[styles.result, { color: colors.text }, emphasizeScore && styles.resultStrong]}>
+                {fixture.home_score ?? '–'}
               </Text>
-            ) : (
-              <Text variant="caption" muted>
-                {formatTime(fixture.kickoff_at)}
-              </Text>
-            )}
+            ) : null}
           </View>
-          <View style={[styles.side, styles.away]}>
-            <Text numberOfLines={1} style={[styles.name, styles.awayName]}>
-              {fixture.away_team.short_name}
-            </Text>
+          <View style={styles.teamRow}>
             <TeamMark
-              name={fixture.away_team.name}
+              name={awayName}
               shortName={fixture.away_team.short_name}
               isClub={fixture.away_team.is_eskisehirspor}
               crestUri={fixture.away_team.crest_path}
-              size="sm"
+              size={fixture.away_team.is_eskisehirspor ? 'md' : 'sm'}
             />
+            <Text
+              numberOfLines={1}
+              style={[
+                styles.name,
+                { color: colors.text },
+                fixture.away_team.is_eskisehirspor && styles.clubName,
+                compact && !clubMatch && { color: colors.textSecondary },
+              ]}
+            >
+              {awayName}
+            </Text>
+            {showScore ? (
+              <Text style={[styles.result, { color: colors.text }, emphasizeScore && styles.resultStrong]}>
+                {fixture.away_score ?? '–'}
+              </Text>
+            ) : (
+              <Text variant="caption" muted style={styles.status}>
+                {compact ? null : statusLabel}
+              </Text>
+            )}
           </View>
         </View>
-        <Text variant="caption" muted numberOfLines={1}>
-          {[venueSide, fixture.venue?.name, FIXTURE_STATUS_LABELS[fixture.status]].filter(Boolean).join('  ·  ')}
-        </Text>
-      </View>
-    </PressableScale>
+      </PressableScale>
+      {awayTrip ? <AwayTripChip fixture={fixture} trip={awayTrip} /> : null}
+    </View>
   );
 }
 
@@ -77,81 +140,81 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
     alignItems: 'stretch',
-    gap: spacing.md,
-    paddingVertical: spacing.md,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.borderSubtle,
+    gap: spacing.sm,
+    paddingVertical: spacing.sm,
+    minHeight: 72,
   },
   body: {
     flex: 1,
     minWidth: 0,
-    gap: 6,
+    gap: 4,
+    justifyContent: 'center',
   },
-  teams: {
+  teamRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.xs,
-  },
-  side: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
+    gap: spacing.sm,
     minWidth: 0,
-  },
-  away: {
-    justifyContent: 'flex-end',
+    minHeight: 36,
   },
   name: {
     flex: 1,
     minWidth: 0,
+    fontSize: typography.size.md,
+    lineHeight: typography.lineHeight.md,
+    fontWeight: typography.weight.medium,
   },
-  awayName: {
+  clubName: {
+    fontWeight: typography.weight.bold,
+  },
+  result: {
+    minWidth: 28,
+    textAlign: 'right',
+    fontSize: typography.size.lg,
+    lineHeight: typography.lineHeight.lg,
+    fontWeight: typography.weight.semibold,
+    fontVariant: ['tabular-nums'],
+  },
+  resultStrong: {
+    fontWeight: typography.weight.bold,
+  },
+  status: {
     textAlign: 'right',
   },
-  mid: {
-    minWidth: 56,
-    alignItems: 'center',
-  },
   emptyCrest: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.border,
   },
 });
 
 export function MatchRowPlaceholder({ mode }: { mode: 'upcoming' | 'result' }) {
+  const colors = useColors();
   return (
-    <View style={styles.row} accessibilityLabel="Fikstür bekleniyor">
-      <DateStamp iso={null} />
-      <View style={styles.body}>
-        <Text variant="overline" muted>
-          Fikstür
-        </Text>
-        <View style={styles.teams}>
-          <View style={styles.side}>
-            <ClubCrest size="sm" />
-            <Text numberOfLines={1} style={styles.name}>
-              ES ES
+    <View style={{ borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.borderSubtle }} accessibilityLabel="Fikstür bekleniyor">
+      <View style={styles.row}>
+        <DateStamp iso={null} />
+        <View style={styles.body}>
+          <Text variant="caption" muted>
+            Fikstür
+          </Text>
+          <View style={styles.teamRow}>
+            <ClubCrest size="md" />
+            <Text numberOfLines={1} style={[styles.name, styles.clubName, { color: colors.text }]}>
+              Eskişehirspor
             </Text>
           </View>
-          <View style={styles.mid}>
-            <Text variant="caption" muted>
-              {mode === 'result' ? '— : —' : 'Saat'}
-            </Text>
-          </View>
-          <View style={[styles.side, styles.away]}>
-            <Text numberOfLines={1} muted style={[styles.name, styles.awayName]}>
+          <View style={styles.teamRow}>
+            <View style={[styles.emptyCrest, { borderColor: colors.border }]} />
+            <Text numberOfLines={1} muted style={styles.name}>
               Rakip
             </Text>
-            <View style={styles.emptyCrest} />
+            <Text variant="caption" muted>
+              {mode === 'result' ? '—' : 'Saat'}
+            </Text>
           </View>
         </View>
-        <Text variant="caption" muted>
-          Stadyum kaydı yok
-        </Text>
       </View>
     </View>
   );

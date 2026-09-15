@@ -8,7 +8,8 @@ import {
   View,
   type ViewProps,
 } from 'react-native';
-import { colors, layout, spacing } from './tokens';
+import { layout, spacing } from './tokens';
+import { useColors } from './theme-context';
 
 export function Screen({
   children,
@@ -23,9 +24,10 @@ export function Screen({
   refreshing?: boolean;
   onRefresh?: () => void;
 }) {
+  const colors = useColors();
   const content = scroll ? (
     <ScrollView
-      contentContainerStyle={styles.scroll}
+      contentContainerStyle={[styles.scroll, { backgroundColor: colors.background }]}
       keyboardShouldPersistTaps="handled"
       showsVerticalScrollIndicator={false}
       refreshControl={
@@ -42,12 +44,12 @@ export function Screen({
       {children}
     </ScrollView>
   ) : (
-    <View style={[styles.body, style]}>{children}</View>
+    <View style={[styles.body, { backgroundColor: colors.background }, style]}>{children}</View>
   );
 
   const wrapped = keyboard ? (
     <KeyboardAvoidingView
-      style={styles.flex}
+      style={[styles.flex, { backgroundColor: colors.background }]}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       {content}
@@ -57,7 +59,7 @@ export function Screen({
   );
 
   return (
-    <SafeAreaView style={styles.safe} edges={['top', 'left', 'right']}>
+    <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={['top', 'left', 'right']}>
       {wrapped}
     </SafeAreaView>
   );
@@ -66,7 +68,6 @@ export function Screen({
 const styles = StyleSheet.create({
   safe: {
     flex: 1,
-    backgroundColor: colors.background,
   },
   flex: {
     flex: 1,

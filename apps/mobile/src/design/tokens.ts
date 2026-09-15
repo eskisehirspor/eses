@@ -1,26 +1,8 @@
 import { fontFamily } from '@/lib/fonts';
+import { darkColors } from './theme-palettes';
 
-export const colors = {
-  red: '#C8102E',
-  redMuted: '#8A0F22',
-  redSoft: 'rgba(200, 16, 46, 0.12)',
-  gold: '#FFED00',
-  black: '#030304',
-  charcoal: '#0C0C0E',
-  white: '#F6F3F0',
-  background: '#030304',
-  surface: '#0C0C0E',
-  surfaceRaised: '#141418',
-  text: '#F6F3F0',
-  textSecondary: '#C5BEB6',
-  textMuted: '#7F7972',
-  border: '#242428',
-  borderSubtle: '#16161A',
-  overlay: 'rgba(0, 0, 0, 0.55)',
-  danger: '#E24B4A',
-  success: '#3BB273',
-  warning: '#D4A017',
-} as const;
+/** Default (dark) semantic colors — prefer useColors() for live theme. */
+export const colors = darkColors;
 
 export const spacing = {
   xxs: 4,
@@ -49,28 +31,38 @@ export const borders = {
 export const typography = {
   family: fontFamily,
   size: {
-    overline: 10,
-    xs: 12,
-    sm: 13,
-    md: 16,
-    lg: 18,
+    overline: 13,
+    xs: 13,
+    sm: 14,
+    md: 17,
+    lg: 21,
     xl: 28,
-    display: 40,
-    score: 44,
+    display: 32,
+    score: 48,
+    dateDay: 24,
+    tab: 12,
   },
   lineHeight: {
-    overline: 14,
-    xs: 16,
-    sm: 18,
+    overline: 18,
+    xs: 18,
+    sm: 20,
     md: 24,
-    lg: 24,
-    xl: 32,
-    display: 44,
-    score: 48,
+    lg: 26,
+    xl: 34,
+    display: 38,
+    score: 52,
+    dateDay: 28,
+    tab: 16,
+  },
+  weight: {
+    regular: '400' as const,
+    medium: '500' as const,
+    semibold: '600' as const,
+    bold: '700' as const,
   },
   tracking: {
-    overline: 2.2,
-    masthead: 3,
+    overline: 0.6,
+    masthead: 0.2,
   },
 } as const;
 
@@ -86,10 +78,17 @@ export const elevation = {
 } as const;
 
 export const iconSize = {
-  sm: 16,
-  md: 18,
-  lg: 22,
-  xl: 28,
+  sm: 18,
+  md: 22,
+  lg: 24,
+  xl: 32,
+} as const;
+
+export const crestSize = {
+  standings: 32,
+  row: 36,
+  rowClub: 40,
+  featured: 80,
 } as const;
 
 export const touchTarget = 44;
@@ -97,11 +96,12 @@ export const touchTarget = 44;
 export const layout = {
   gutter: 20,
   maxReadable: 720,
-  tabBarHeight: 52,
+  tabBarHeight: 56,
   stripe: 2,
-  mediaHero: 220,
+  mediaHero: 240,
   mediaStory: 168,
   mediaThumb: { width: 108, height: 80 },
+  dateStamp: 56,
 } as const;
 
 export const motion = {
@@ -118,6 +118,7 @@ export const tokens = {
   typography,
   elevation,
   iconSize,
+  crestSize,
   touchTarget,
   layout,
   motion,

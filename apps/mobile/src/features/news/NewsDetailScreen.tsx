@@ -67,7 +67,7 @@ export function NewsDetailScreen({ slug }: { slug: string }) {
         />
       </View>
       <View style={styles.meta}>
-        <Text variant="overline" tone="accent">
+        <Text variant="caption" tone="accent">
           {article.categories[0]?.title ?? (article.is_announcement ? 'Duyuru' : 'Kulüp')}
         </Text>
         <Text variant="title">{article.title}</Text>

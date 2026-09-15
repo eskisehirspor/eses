@@ -1,14 +1,15 @@
 import { View, StyleSheet } from 'react-native';
-import { colors, spacing } from './tokens';
+import { spacing } from './tokens';
+import { useColors } from './theme-context';
 
 export function Divider() {
-  return <View style={styles.line} />;
+  const colors = useColors();
+  return <View style={[styles.line, { backgroundColor: colors.border }]} />;
 }
 
 const styles = StyleSheet.create({
   line: {
     height: StyleSheet.hairlineWidth,
-    backgroundColor: colors.border,
     marginVertical: spacing.md,
   },
 });

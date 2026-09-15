@@ -1,5 +1,6 @@
 import { Modal, Pressable, StyleSheet, View } from 'react-native';
-import { colors, radii, spacing } from './tokens';
+import { radii, spacing } from './tokens';
+import { useColors } from './theme-context';
 import { Text } from './Text';
 import { Button } from './Button';
 
@@ -20,10 +21,14 @@ export function Dialog({
   onConfirm: () => void;
   onClose: () => void;
 }) {
+  const colors = useColors();
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
-      <Pressable style={styles.backdrop} onPress={onClose}>
-        <Pressable style={styles.sheet} onPress={(event) => event.stopPropagation()}>
+      <Pressable style={[styles.backdrop, { backgroundColor: colors.overlay }]} onPress={onClose}>
+        <Pressable
+          style={[styles.sheet, { backgroundColor: colors.surface }]}
+          onPress={(event) => event.stopPropagation()}
+        >
           <Text variant="subtitle">{title}</Text>
           <Text muted>{description}</Text>
           <View style={styles.actions}>
@@ -39,12 +44,10 @@ export function Dialog({
 const styles = StyleSheet.create({
   backdrop: {
     flex: 1,
-    backgroundColor: colors.overlay,
     justifyContent: 'center',
     padding: spacing.lg,
   },
   sheet: {
-    backgroundColor: colors.surface,
     borderRadius: radii.lg,
     padding: spacing.lg,
     gap: spacing.md,

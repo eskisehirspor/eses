@@ -1,10 +1,12 @@
 import { Tabs } from 'expo-router';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Platform, StyleSheet } from 'react-native';
-import { colors, iconSize, layout, typography } from '@/design/tokens';
+import { iconSize, layout, typography } from '@/design/tokens';
+import { useColors } from '@/design/theme-context';
 import { navIcons } from '@/design/icons';
 
 export default function TabsLayout() {
+  const colors = useColors();
   return (
     <Tabs
       screenOptions={{
@@ -13,20 +15,21 @@ export default function TabsLayout() {
         tabBarInactiveTintColor: colors.textMuted,
         tabBarHideOnKeyboard: true,
         tabBarStyle: {
-          backgroundColor: colors.black,
+          backgroundColor: colors.surface,
           borderTopWidth: StyleSheet.hairlineWidth,
           borderTopColor: colors.borderSubtle,
           height: layout.tabBarHeight + (Platform.OS === 'ios' ? 20 : 10),
-          paddingTop: 6,
+          paddingTop: 8,
           paddingBottom: Platform.OS === 'ios' ? 20 : 10,
         },
         tabBarItemStyle: {
           minHeight: 44,
         },
         tabBarLabelStyle: {
-          fontFamily: typography.family.uiSemi,
-          fontSize: 9,
-          letterSpacing: 1.2,
+          fontFamily: typography.family.ui,
+          fontSize: typography.size.tab,
+          lineHeight: typography.lineHeight.tab,
+          fontWeight: typography.weight.semibold,
         },
         tabBarIconStyle: {
           marginBottom: -2,
@@ -36,7 +39,7 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: 'HOME',
+          title: 'Home',
           tabBarAccessibilityLabel: 'Home',
           tabBarIcon: ({ color, focused }) => (
             <Ionicons name={focused ? navIcons.home.active : navIcons.home.idle} size={iconSize.lg} color={color} />
@@ -46,7 +49,7 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="maclar"
         options={{
-          title: 'MAÇLAR',
+          title: 'Maçlar',
           tabBarAccessibilityLabel: 'Maçlar',
           tabBarIcon: ({ color, focused }) => (
             <Ionicons
@@ -60,7 +63,7 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="tribun"
         options={{
-          title: 'TRİBÜN',
+          title: 'Tribün',
           tabBarAccessibilityLabel: 'Tribün',
           tabBarIcon: ({ color, focused }) => (
             <Ionicons
@@ -74,7 +77,7 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="oyna"
         options={{
-          title: 'OYNA',
+          title: 'Oyna',
           tabBarAccessibilityLabel: 'Oyna',
           tabBarIcon: ({ color, focused }) => (
             <Ionicons name={focused ? navIcons.play.active : navIcons.play.idle} size={iconSize.lg} color={color} />
@@ -84,7 +87,7 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="profil"
         options={{
-          title: 'PROFİL',
+          title: 'Profil',
           tabBarAccessibilityLabel: 'Profil',
           tabBarIcon: ({ color, focused }) => (
             <Ionicons

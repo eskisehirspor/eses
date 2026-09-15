@@ -1,5 +1,6 @@
 import { Pressable, StyleSheet } from 'react-native';
-import { colors, spacing, touchTarget } from './tokens';
+import { spacing, touchTarget } from './tokens';
+import { useColors } from './theme-context';
 import { Text } from './Text';
 
 export function Chip({
@@ -11,14 +12,15 @@ export function Chip({
   selected?: boolean;
   onPress?: () => void;
 }) {
+  const colors = useColors();
   return (
     <Pressable
       accessibilityRole="button"
       accessibilityState={{ selected }}
       onPress={onPress}
-      style={[styles.chip, selected && styles.selected]}
+      style={[styles.chip, selected && { borderBottomColor: colors.red }]}
     >
-      <Text variant="overline" style={selected ? styles.on : styles.off}>
+      <Text variant="caption" style={{ color: selected ? colors.text : colors.textMuted }}>
         {label}
       </Text>
     </Pressable>
@@ -27,20 +29,11 @@ export function Chip({
 
 const styles = StyleSheet.create({
   chip: {
-    minHeight: touchTarget - 4,
+    minHeight: touchTarget,
     paddingHorizontal: spacing.xs,
     paddingVertical: spacing.xs,
     borderBottomWidth: 2,
     borderBottomColor: 'transparent',
     justifyContent: 'center',
-  },
-  selected: {
-    borderBottomColor: colors.red,
-  },
-  on: {
-    color: colors.text,
-  },
-  off: {
-    color: colors.textMuted,
   },
 });
