@@ -1,0 +1,16 @@
+---
+description: Turkish-first UI, design system, and required screen states.
+globs: "apps/mobile/**/*.{ts,tsx}"
+alwaysApply: false
+---
+
+# Mobile UX
+
+- UI copy is Turkish-first.
+- Primary tabs: HOME, MAÇLAR, TRİBÜN, OYNA, PROFİL. Do not replace this IA.
+- Use `src/design` primitives (button, card, chip, tabs, badge, avatar, sheet, dialog, skeleton, toast, error/empty). Screens do not invent new colors or one-off buttons.
+- Brand: red / black / white + neutrals. No gradient-heavy or cliché “generic football” chrome.
+- Every screen: loading, empty, error, offline/poor connection. Permission state where relevant.
+- Accessibility: contrast, hit targets, labels. Dynamic type should not clip essential actions.
+- Do not request Always/background location on first launch. Presence is opt-in and contextual (`docs/MATCH-PRESENCE.md`).
+- Optimistic UI is allowed for likes/comments display only — never for XP, attendance, or prediction settlement.

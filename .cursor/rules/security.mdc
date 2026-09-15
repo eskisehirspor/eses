@@ -1,0 +1,19 @@
+---
+description: Mandatory security rules for auth, RLS, secrets, and privileged actions.
+alwaysApply: true
+---
+
+# Security (non-negotiable)
+
+1. Never trust the mobile client for XP, rewards, match attendance, or prediction results.
+2. Never put the Supabase **service-role** key in the app, `EXPO_PUBLIC_*`, admin browser bundles, or git.
+3. Every exposed table must have RLS; default deny. No `using (true)` writes.
+4. Users must not insert/update/delete `xp_transactions`, `xp_balances`, presence verifications, match results, leaderboards, or `user_roles`.
+5. Reward-affecting work goes through Edge Functions (or equivalent server) in a transaction; mutations are idempotent.
+6. Admin/moderator routes and RPCs re-check `user_roles` server-side.
+7. UGC inserts go through the moderation pipeline, not direct table writes from the client.
+8. Rate-limit abuse-prone endpoints (post, report, presence, quiz, prediction, login).
+9. Never silently swallow errors (`catch (e) {}` is a bug). Log a code and surface a Turkish user message where UI exists.
+10. Sensitive changes (RLS, ledgers, presence, roles, storage publicness) require tests and a security pass.
+
+Details: `docs/SECURITY.md`.

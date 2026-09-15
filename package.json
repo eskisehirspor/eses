@@ -1,0 +1,23 @@
+{
+  "name": "eskisehirspor-app",
+  "private": true,
+  "packageManager": "pnpm@11.20.0",
+  "engines": {
+    "node": ">=22.13.0"
+  },
+  "scripts": {
+    "dev": "pnpm --parallel --filter @eskisehirspor/mobile --filter @eskisehirspor/admin dev",
+    "dev:mobile": "pnpm --filter @eskisehirspor/mobile start",
+    "dev:admin": "pnpm --filter @eskisehirspor/admin dev",
+    "typecheck": "pnpm -r --if-present typecheck",
+    "lint": "pnpm -r --if-present lint",
+    "test": "pnpm -r --if-present test",
+    "test:unit": "pnpm -r --if-present test:unit",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
+  },
+  "devDependencies": {
+    "prettier": "^3.6.2",
+    "typescript": "^5.9.2"
+  }
+}

@@ -1,0 +1,19 @@
+---
+description: Error handling, tests, and moderation for business-critical logic.
+alwaysApply: true
+---
+
+# Errors
+
+- Never empty `catch`. Log `{ code, cause }`; show a Turkish message in UI.
+- Edge Functions return structured `{ error: { code, message } }` with proper HTTP status. No success body on failure.
+- Analytics insert may fail without blocking UX, but the failure must be logged.
+
+# Tests
+
+Required before claiming done for: XP apply/caps, prediction lock/settle, presence verify/duplicate, RLS on ledger tables, Turkish moderation normalization (obfuscation cases).
+
+# Moderation
+
+- UGC is not a client-side word list. Pipeline: normalize → patterns → severity → rate/spam → reports → queue → strikes → restrictions → bans → audit → appeals (`docs/MODERATION.md`).
+- Criticism of the club is not automatically abuse. Threats, hate, CSAM, and doxxing are critical.

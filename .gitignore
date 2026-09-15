@@ -1,0 +1,53 @@
+# Dependencies
+node_modules
+.pnpm-store
+
+# Environment and secrets
+.env
+.env.*
+!.env.example
+!.env.*.example
+
+# Logs and OS
+*.log
+.DS_Store
+Thumbs.db
+
+# Editors
+.idea
+.vscode/*
+!.vscode/extensions.json
+
+# TypeScript
+*.tsbuildinfo
+dist
+build
+.turbo
+
+# Expo / React Native
+apps/mobile/.expo
+apps/mobile/ios
+apps/mobile/android
+apps/mobile/web-build
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+coverage
+
+# Next.js
+apps/admin/.next
+apps/admin/out
+
+# Testing
+coverage
+.nyc_output
+
+# Supabase local
+supabase/.temp
+supabase/.branches
+
+# Misc
+*.local
+.vercel

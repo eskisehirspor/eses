@@ -1,0 +1,20 @@
+---
+description: Supabase migrations, RLS, and Edge Function conventions.
+globs: "{supabase,apps/admin}/**/*"
+alwaysApply: false
+---
+
+# Supabase
+
+- Schema changes are migrations in `supabase/migrations`. Do not hand-edit production in the dashboard as the source of truth.
+- Enable RLS on every new table in the same migration. Document policies in `docs/DATABASE.md` terms.
+- Ledger/presence/settlement writes: service role **inside Edge Functions** after JWT + rule checks — not from the web/mobile anon client.
+- `security definer` functions require fixed `search_path` and an explicit role check.
+- Hide correct quiz answers and shadow-ban flags from supporter select policies (use views).
+- Storage: private by default; signed URLs; mime/size limits.
+- Idempotency unique keys on reward, ingest, and presence writes.
+
+# Admin
+
+- Next.js middleware blocks console routes without `admin` / `moderator` / `editor` as appropriate.
+- Never embed service-role in client components.

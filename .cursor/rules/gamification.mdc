@@ -1,0 +1,22 @@
+---
+description: Server-authoritative XP, leaderboards, and match presence.
+globs: "**/*.{ts,tsx,sql}"
+alwaysApply: false
+---
+
+# Gamification
+
+- XP is an append-only `xp_transactions` ledger. Never `profiles.xp = user_input`.
+- All grants go through `apply_xp` (or equivalent) after eligibility checks. No public “give XP” API.
+- Rules live in `xp_rules` / missions; client only displays them.
+- Leaderboards are views/snapshots of trusted balances, not uploaded ranks.
+- Tests required: idempotency, caps, settlement, negative admin adjust.
+
+# Match presence
+
+- Client may send a location sample; server decides verified/rejected.
+- One verified presence per `(user_id, fixture_id)`.
+- No continuous tracking; geofence only inside the match window if used at all.
+- Do not store precise GPS longer than the KVKK retention policy.
+
+See `docs/GAMIFICATION.md` and `docs/MATCH-PRESENCE.md`.

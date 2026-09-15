@@ -1,0 +1,18 @@
+---
+description: Inspect first, preserve working code, and avoid opportunistic rewrites.
+alwaysApply: true
+---
+
+# Inspect before editing
+
+- Read the relevant files and `docs/` before changing behaviour.
+- This repo started empty (2026-09-15). Do not invent an “existing” Expo/Next/Supabase implementation that is not in the tree.
+- Do not delete or rewrite working code to match a preferred architecture.
+- Do not start Phase 1+ features when the task is Phase 0, and do not build the whole app after a docs-only task.
+- Follow `docs/ROADMAP.md` order unless the user instructs otherwise.
+
+# Dependencies and scope
+
+- Do not add a library unless it is required for the task. No Redux, no extra backend, no analytics SaaS, no chat SDK unless explicitly requested.
+- Preferred stack: Expo SDK 57, React Native, TypeScript, Expo Router, Supabase, Next.js admin, pnpm workspaces (`docs/ARCHITECTURE.md`).
+- Do not scrape unofficial sports sites. Do not hardcode stadium coordinates as the only source of truth.
