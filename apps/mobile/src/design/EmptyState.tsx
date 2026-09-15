@@ -3,22 +3,27 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { colors, iconSize, spacing } from './tokens';
 import { Text } from './Text';
 import { Button } from './Button';
+import type { IoniconName } from './icons';
 
 export function EmptyState({
   title,
   description,
   actionLabel,
   onAction,
+  compact = false,
+  icon = 'ellipse-outline',
 }: {
   title: string;
   description: string;
   actionLabel?: string;
   onAction?: () => void;
+  compact?: boolean;
+  icon?: IoniconName;
 }) {
   return (
-    <View style={styles.wrap}>
-      <Ionicons name="flag-outline" size={iconSize.xl} color={colors.red} />
-      <Text variant="subtitle" style={styles.title}>
+    <View style={[styles.wrap, compact && styles.compact]}>
+      <Ionicons name={icon} size={compact ? iconSize.lg : iconSize.xl} color={colors.red} />
+      <Text variant={compact ? 'caption' : 'subtitle'} style={styles.title}>
         {title}
       </Text>
       <Text muted style={styles.copy}>
@@ -36,6 +41,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: spacing.sm,
     padding: spacing.lg,
+  },
+  compact: {
+    flex: 0,
+    paddingVertical: spacing.md,
   },
   title: {
     textAlign: 'center',

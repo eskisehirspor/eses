@@ -1,15 +1,22 @@
+import { fontFamily } from '@/lib/fonts';
+
 export const colors = {
-  red: '#D0121F',
-  redMuted: '#8F1018',
-  black: '#0B0B0C',
-  white: '#F7F4F2',
-  background: '#0B0B0C',
-  surface: '#161618',
-  surfaceRaised: '#1E1E21',
-  text: '#F7F4F2',
-  textMuted: '#A8A29E',
-  border: '#2C2C31',
-  overlay: 'rgba(0, 0, 0, 0.64)',
+  red: '#C8102E',
+  redMuted: '#8A0F22',
+  redSoft: 'rgba(200, 16, 46, 0.12)',
+  gold: '#FFED00',
+  black: '#030304',
+  charcoal: '#0C0C0E',
+  white: '#F6F3F0',
+  background: '#030304',
+  surface: '#0C0C0E',
+  surfaceRaised: '#141418',
+  text: '#F6F3F0',
+  textSecondary: '#C5BEB6',
+  textMuted: '#7F7972',
+  border: '#242428',
+  borderSubtle: '#16161A',
+  overlay: 'rgba(0, 0, 0, 0.55)',
   danger: '#E24B4A',
   success: '#3BB273',
   warning: '#D4A017',
@@ -26,9 +33,11 @@ export const spacing = {
 } as const;
 
 export const radii = {
-  sm: 8,
-  md: 12,
-  lg: 16,
+  none: 0,
+  xs: 2,
+  sm: 4,
+  md: 8,
+  lg: 12,
   full: 999,
 } as const;
 
@@ -38,54 +47,62 @@ export const borders = {
 } as const;
 
 export const typography = {
-  family: {
-    regular: 'System',
-    medium: 'System',
-    bold: 'System',
-  },
+  family: fontFamily,
   size: {
+    overline: 10,
     xs: 12,
-    sm: 14,
+    sm: 13,
     md: 16,
-    lg: 20,
+    lg: 18,
     xl: 28,
-    display: 34,
+    display: 40,
+    score: 44,
   },
   lineHeight: {
+    overline: 14,
     xs: 16,
-    sm: 20,
+    sm: 18,
     md: 24,
-    lg: 28,
-    xl: 34,
-    display: 40,
+    lg: 24,
+    xl: 32,
+    display: 44,
+    score: 48,
+  },
+  tracking: {
+    overline: 2.2,
+    masthead: 3,
   },
 } as const;
 
 export const elevation = {
   none: {
-    shadowColor: 'transparent',
-    shadowOpacity: 0,
-    shadowRadius: 0,
-    shadowOffset: { width: 0, height: 0 },
+    boxShadow: 'none',
     elevation: 0,
   },
   card: {
-    shadowColor: '#000000',
-    shadowOpacity: 0.28,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 6 },
+    boxShadow: '0px 16px 40px rgba(0, 0, 0, 0.45)',
     elevation: 4,
   },
 } as const;
 
 export const iconSize = {
   sm: 16,
-  md: 20,
-  lg: 24,
-  xl: 32,
+  md: 18,
+  lg: 22,
+  xl: 28,
 } as const;
 
 export const touchTarget = 44;
+
+export const layout = {
+  gutter: 20,
+  maxReadable: 720,
+  tabBarHeight: 52,
+  stripe: 2,
+  mediaHero: 220,
+  mediaStory: 168,
+  mediaThumb: { width: 108, height: 80 },
+} as const;
 
 export const motion = {
   fast: 120,
@@ -102,6 +119,7 @@ export const tokens = {
   elevation,
   iconSize,
   touchTarget,
+  layout,
   motion,
 } as const;
 

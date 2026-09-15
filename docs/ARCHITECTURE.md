@@ -8,19 +8,19 @@ This is a **proposed** architecture. The repository currently contains no applic
 
 ## Current repository architecture
 
-Phase 0 is implemented in this repository. Later pillars are not.
+Phase 0 identity plus Phase 1A content/match tables are implemented. Later pillars are not.
 
 | Area | State |
 | --- | --- |
 | Framework | pnpm workspaces: Expo SDK 57 mobile, Next.js 16 admin, `packages/shared` |
-| Screens | Five-tab shell, email auth, profile stub, honest empty states |
-| Backend | Identity migration in `supabase/migrations`; no hosted project linked |
+| Screens | Five-tab shell, Home with live queries, news list/detail, match list/detail/standings, email auth, profile |
+| Backend | Identity + news + fixtures/standings migrations; no hosted project linked |
 | Auth | Email/password. Apple/Google remain disabled flags until provider setup |
-| Database | `profiles`, `user_roles`, RLS default-deny |
+| Database | profiles, user_roles, news_*, competitions, teams, venues, fixtures, match_events, standings |
 | Design system | `apps/mobile/src/design` |
 | Remote | None |
 
-Tabs are usable without login. Profile/admin require a session. Public news is still future.
+Tabs are usable without login. Published news and match data are publicly readable via RLS. Profile/admin require a session.
 
 ---
 
@@ -79,7 +79,7 @@ Package manager: **pnpm workspaces**. Lockfile committed. Do not mix npm/yarn in
 
 Expo Router, typed routes enabled.
 
-Phase 0 routes (implemented). Feature routes for matches/forum/quizzes are not created yet.
+Phase 0 routes plus Phase 1A content routes:
 
 ```text
 apps/mobile/app/
@@ -88,10 +88,13 @@ apps/mobile/app/
   (auth)/sign-up.tsx
   (tabs)/_layout.tsx
   (tabs)/index.tsx            # HOME
-  (tabs)/maclar.tsx
+  (tabs)/maclar/index.tsx
+  (tabs)/maclar/[id].tsx
   (tabs)/tribun.tsx
   (tabs)/oyna.tsx
   (tabs)/profil.tsx
+  haber/index.tsx
+  haber/[slug].tsx
   +not-found.tsx
 ```
 
@@ -295,6 +298,20 @@ Mobile compose
 | Play Integrity / DeviceCheck | V1 presence | Anti-spoof signal, never the only signal. |
 
 Do not scrape third-party sports sites. If no provider is contracted, admin-entered scores are the honest MVP.
+
+## PROVIDER-DEPENDENT
+
+Phase 1A does **not** integrate a live-score or fixture provider.
+
+Core tables are provider-neutral (`competitions`, `teams`, `fixtures`, `match_events`, `standings`). Optional `provider_code` + `provider_*_id` columns exist only for later idempotent ingest.
+
+Until a provider is chosen:
+
+- Kickoff, status, and scores may be entered by an ops admin (`admin` / `super_admin`) directly in the database.
+- `live` / `halftime` are manual statuses, not a scoring engine.
+- `match_events` is a foundation table; the mobile app does not render a live timeline yet.
+
+A custom HTTP API was not invented. Ingest should be an Edge Function when a provider is contracted.
 
 ---
 

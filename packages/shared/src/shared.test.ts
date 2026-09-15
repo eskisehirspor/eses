@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { resolveAdminAccess } from './access';
+import { resolveAdminAccess, resolveContentAccess, hasContentAccess } from './access';
 import { ANALYTICS_EVENTS } from './analytics';
 import { isSocialAuthConfigured } from './auth-providers';
 import { MOBILE_TABS } from './navigation';
@@ -38,6 +38,20 @@ describe('admin access', () => {
     expect(resolveAdminAccess({ hasSession: false, roles: ['super_admin'] })).toBe(
       'unauthenticated',
     );
+  });
+});
+
+describe('content manager access', () => {
+  it('does not let a regular user or moderator manage news', () => {
+    expect(resolveContentAccess({ hasSession: true, roles: ['user'] })).toBe('unauthorized');
+    expect(resolveContentAccess({ hasSession: true, roles: ['moderator'] })).toBe('unauthorized');
+    expect(hasContentAccess(['user'])).toBe(false);
+  });
+
+  it('authorizes editors and admins for news CMS', () => {
+    expect(resolveContentAccess({ hasSession: true, roles: ['editor'] })).toBe('authorized');
+    expect(resolveContentAccess({ hasSession: true, roles: ['admin'] })).toBe('authorized');
+    expect(resolveContentAccess({ hasSession: false, roles: ['editor'] })).toBe('unauthenticated');
   });
 });
 

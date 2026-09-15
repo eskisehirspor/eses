@@ -5,24 +5,88 @@ import {
 } from 'react-native';
 import { colors, typography } from './tokens';
 
-type Variant = 'display' | 'title' | 'body' | 'subtitle' | 'caption';
+type Variant = 'masthead' | 'display' | 'title' | 'subtitle' | 'body' | 'caption' | 'overline' | 'score';
 
-const variantStyle: Record<Variant, { fontSize: number; lineHeight: number; fontWeight: '400' | '600' | '700' }> =
+const variantStyle: Record<
+  Variant,
   {
-    display: { fontSize: typography.size.display, lineHeight: typography.lineHeight.display, fontWeight: '700' },
-    title: { fontSize: typography.size.xl, lineHeight: typography.lineHeight.xl, fontWeight: '700' },
-    body: { fontSize: typography.size.md, lineHeight: typography.lineHeight.md, fontWeight: '400' },
-    subtitle: { fontSize: typography.size.lg, lineHeight: typography.lineHeight.lg, fontWeight: '600' },
-    caption: { fontSize: typography.size.sm, lineHeight: typography.lineHeight.sm, fontWeight: '400' },
-  };
+    fontFamily: string;
+    fontSize: number;
+    lineHeight: number;
+    letterSpacing?: number;
+  }
+> = {
+  masthead: {
+    fontFamily: typography.family.display,
+    fontSize: 24,
+    lineHeight: 28,
+    letterSpacing: 1.6,
+  },
+  display: {
+    fontFamily: typography.family.display,
+    fontSize: typography.size.xl,
+    lineHeight: typography.lineHeight.xl,
+    letterSpacing: 0.6,
+  },
+  title: {
+    fontFamily: typography.family.displaySemi,
+    fontSize: 22,
+    lineHeight: 28,
+    letterSpacing: 0.4,
+  },
+  subtitle: {
+    fontFamily: typography.family.displayMedium,
+    fontSize: typography.size.lg,
+    lineHeight: typography.lineHeight.lg,
+    letterSpacing: 0.3,
+  },
+  body: {
+    fontFamily: typography.family.ui,
+    fontSize: typography.size.md,
+    lineHeight: typography.lineHeight.md,
+  },
+  caption: {
+    fontFamily: typography.family.ui,
+    fontSize: typography.size.sm,
+    lineHeight: typography.lineHeight.sm,
+  },
+  overline: {
+    fontFamily: typography.family.uiSemi,
+    fontSize: typography.size.overline,
+    lineHeight: typography.lineHeight.overline,
+    letterSpacing: typography.tracking.overline,
+  },
+  score: {
+    fontFamily: typography.family.display,
+    fontSize: typography.size.score,
+    lineHeight: typography.lineHeight.score,
+    letterSpacing: 1,
+  },
+};
+
+const upperVariants = new Set<Variant>(['masthead', 'display', 'overline']);
+
+function localizeUpper(children: RNTextProps['children']): RNTextProps['children'] {
+  if (typeof children === 'string' || typeof children === 'number') {
+    return String(children).toLocaleUpperCase('tr-TR');
+  }
+  return children;
+}
 
 export type AppTextProps = RNTextProps & {
   variant?: Variant;
   muted?: boolean;
-  tone?: 'default' | 'danger';
+  tone?: 'default' | 'danger' | 'accent';
 };
 
-export function Text({ variant = 'body', muted, tone = 'default', style, ...rest }: AppTextProps) {
+export function Text({
+  variant = 'body',
+  muted,
+  tone = 'default',
+  style,
+  children,
+  ...rest
+}: AppTextProps) {
   return (
     <RNText
       style={[
@@ -30,22 +94,27 @@ export function Text({ variant = 'body', muted, tone = 'default', style, ...rest
         variantStyle[variant],
         muted && styles.muted,
         tone === 'danger' && styles.danger,
+        tone === 'accent' && styles.accent,
         style,
       ]}
       {...rest}
-    />
+    >
+      {upperVariants.has(variant) ? localizeUpper(children) : children}
+    </RNText>
   );
 }
 
 const styles = StyleSheet.create({
   base: {
     color: colors.text,
-    fontFamily: typography.family.regular,
   },
   muted: {
     color: colors.textMuted,
   },
   danger: {
     color: colors.danger,
+  },
+  accent: {
+    color: colors.red,
   },
 });

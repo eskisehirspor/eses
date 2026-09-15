@@ -2,7 +2,7 @@
 
 Security model for the official Eskişehirspor fan application.
 
-Phase 0 landed identity RLS, email auth, and admin access states. There is still **no linked hosted project** and **no service-role usage in apps**. Do not add the service-role key to mobile or `NEXT_PUBLIC_*`.
+Phase 0 landed identity RLS, email auth, and admin access states. Phase 1A adds published-news public read, content-manager news writes, ops-admin match writes, and `news-covers` storage policies. Phase 1B-A adds live-match RPCs (clients cannot write scores/events; live fixture columns are trigger-guarded). Anonymous SELECT policies do not call `is_content_manager()` (execute is authenticated-only). There is still **no linked hosted project** and **no service-role usage in apps**. Do not add the service-role key to mobile or `NEXT_PUBLIC_*`. RLS policies in this repo are not claimed as production-verified until a hosted project runs them.
 
 ---
 
@@ -102,6 +102,11 @@ Never:
 - `profiles.is_admin` writable by the owner.
 - Policies like `using (true)` on write.
 - Grant `authenticated` INSERT on `xp_transactions`, `xp_balances`, `presence_verifications`, `match_events`, `leaderboard_snapshots`, `user_roles`.
+- Client UPDATE of `fixtures.home_score`, `away_score`, `status`, `started_at`, or live timestamps.
+
+### Live match (Phase 1B-A)
+
+Ordinary users and editors/moderators may **read** public fixture rows and match events. They cannot insert/update/delete `match_events` (table grants revoked). Live score/status columns are blocked by `fixtures_guard_live_columns` unless `es.live_rpc = 1` inside SECURITY DEFINER RPCs. `live_start_match` / `live_add_goal` / cards / substitutions / period changes require `admin` or `super_admin`. `live_reverse_event` requires `super_admin`. Realtime uses the same RLS as table SELECT; subscribe per fixture, not globally. `notify_kind` is stored for a future push pipeline; this phase does not send notifications.
 
 Column privileges: hide `quiz_questions.correct_option_id`, `profiles.is_shadow_banned`, moderation internals from supporters.
 

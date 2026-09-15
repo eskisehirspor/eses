@@ -1,7 +1,7 @@
 import { Link } from 'expo-router';
 import { useState } from 'react';
 import { SignInSchema, isSocialAuthConfigured } from '@eskisehirspor/shared';
-import { Button, Card, Screen, Text, Input, useToast, ErrorState, OfflineState } from '@/design';
+import { Button, Card, Screen, Text, Input, useToast, ErrorState, OfflineState, ClubCrest } from '@/design';
 import { getPublicEnv } from '@/lib/env';
 import { getSupabaseClient } from '@/lib/supabase';
 import { mapAuthError } from '@/lib/auth-errors';
@@ -68,6 +68,10 @@ export function SignInScreen() {
   return (
     <Screen scroll keyboard>
       {isOffline ? <OfflineState /> : null}
+      <ClubCrest size="lg" />
+      <Text variant="overline" tone="accent">
+        Eskişehirspor
+      </Text>
       <Text variant="title">Giriş</Text>
       <Text muted>E-posta ve şifre ile devam et. Apple ve Google, sağlayıcı kurulumu bitmeden açılmaz.</Text>
       <Card>

@@ -2,7 +2,7 @@
 
 Phased delivery for the Eskişehirspor fan application.
 
-Phase 0 is implemented in-repo as of 2026-09-15. Do not start Phase 1 until instructed. A hosted Supabase project still needs to be linked before real auth works.
+Phase 1A (news + match data architecture) is implemented in-repo. Phase 1B-A (manual live match center + squad catalog) is implemented in-repo. A hosted Supabase project still needs migrations applied and the official catalog imported before real fixtures appear. Do not start forum, XP, predictions, geofence, or a paid football API until instructed.
 
 ---
 
@@ -26,20 +26,21 @@ Phase 0 is implemented in-repo as of 2026-09-15. Do not start Phase 1 until inst
 
 ---
 
-## Phase 1 — Official information
+## Phase 1A — Official content (implemented)
 
-**Goal:** the app is useful on a weekday.
+News CMS, published-news RLS, fixtures/standings schema, Home/Maçlar/Haber screens. No live provider, no push.
 
-- `news_categories`, `articles`, media storage.
-- Admin publishing (draft/publish/breaking/announcement).
-- HOME: next/previous match placeholders + latest news + announcements.
-- NEWS list/detail (article, video URL, gallery).
-- Fixtures/teams/competitions schema; admin entry **or** provider ingest if contracted.
-- MAÇLAR: fixtures list, standings if data exists, match detail (score, lineup if present).
-- Push tokens + preferences; send on publish/breaking (and match events if data exists).
-- KVKK/terms screens; account deletion entry point.
+## Phase 1B-A — Manual live match (implemented)
 
-**Exit:** a supporter can read official news and see the next match without community or XP.
+Schema + RPCs for Super Admin/admin live match control, Realtime on a single fixture, official 2026–2027 Nesine 3. Lig Group 2 catalog import (no scraper in the app, no paid provider). Push is structured (`notify_kind`) but not sent.
+
+## Phase 1B — Remaining official-information work
+
+- Push tokens / notifications
+- Lineups / richer match events UI
+- Video/gallery article types
+- KVKK/terms and account deletion
+- Optional match CMS for ops admins
 
 ---
 

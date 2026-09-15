@@ -52,7 +52,7 @@ const styles = StyleSheet.create({
   base: {
     minHeight: touchTarget,
     paddingHorizontal: spacing.lg,
-    borderRadius: radii.md,
+    borderRadius: radii.xs,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -60,8 +60,8 @@ const styles = StyleSheet.create({
     backgroundColor: colors.red,
   },
   secondary: {
-    backgroundColor: colors.surfaceRaised,
-    borderWidth: 1,
+    backgroundColor: 'transparent',
+    borderWidth: StyleSheet.hairlineWidth,
     borderColor: colors.border,
   },
   ghost: {
@@ -69,7 +69,7 @@ const styles = StyleSheet.create({
   },
   danger: {
     backgroundColor: colors.surfaceRaised,
-    borderWidth: 1,
+    borderWidth: StyleSheet.hairlineWidth,
     borderColor: colors.danger,
   },
   pressed: {

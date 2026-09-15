@@ -3,17 +3,16 @@ import { router } from 'expo-router';
 import { useState } from 'react';
 import { RoleSchema, type Role } from '@eskisehirspor/shared';
 import {
-  Avatar,
-  Badge,
   Button,
-  Card,
+  ClubIdentity,
   Dialog,
-  Divider,
-  EmptyState,
   ErrorState,
+  FutureSlot,
+  IdentityCard,
   OfflineState,
   Screen,
   ScreenSkeleton,
+  SectionHeader,
   Text,
   useToast,
 } from '@/design';
@@ -81,22 +80,38 @@ export function ProfileScreen() {
 
   if (!isConfigured) {
     return (
-      <Screen>
-        <ErrorState description={errorMessage ?? 'Supabase yapılandırması eksik.'} />
+      <Screen scroll>
+        {isOffline ? <OfflineState onRetry={() => void refresh()} /> : null}
+        <ClubIdentity title="Taraftar kimliği" subtitle="ES ES hesabın" kicker="Giriş" />
+        <Text muted>{errorMessage ?? 'Supabase yapılandırması eksik.'}</Text>
+        <IdentityCard />
+        <SectionHeader title="Hazırlanan katman" quiet />
+        <FutureSlot kicker="Seviye" title="Taraftar kademesi" detail="Sunucu defteri olmadan gösterilmez." />
+        <FutureSlot kicker="XP" title="Puan özeti" detail="İstemci yazamaz." />
+        <FutureSlot kicker="Rozet" title="Koleksiyon" detail="Sahte rozet yok." />
+        <FutureSlot kicker="Stadyum" title="Maçta varlık" detail="Geofence sonraki faz." />
+        <FutureSlot kicker="Geçmiş" title="Maç geçmişi" detail="Resmi kayıt bağlanınca listelenir." />
       </Screen>
     );
   }
 
   if (!session) {
     return (
-      <Screen>
+      <Screen scroll>
         {isOffline ? <OfflineState onRetry={() => void refresh()} /> : null}
-        <EmptyState
-          title="Hesabın"
-          description="Profil, oturum ve çıkış burada. İçerik sekmeleri giriş olmadan da açılır."
-          actionLabel="Giriş yap"
-          onAction={() => router.push('/(auth)/sign-in')}
-        />
+        <ClubIdentity title="Taraftar kimliği" subtitle="ES ES hesabın" kicker="Giriş" />
+        <Text muted>
+          Haber ve maç herkese açık. Kimlik, kart ve tribün geçmişi oturuma bağlıdır.
+        </Text>
+        <IdentityCard />
+        <Button label="Giriş yap" onPress={() => router.push('/(auth)/sign-in')} />
+        <Button label="Hesap oluştur" variant="secondary" onPress={() => router.push('/(auth)/sign-up')} />
+        <SectionHeader title="Hazırlanan katman" quiet />
+        <FutureSlot kicker="Seviye" title="Taraftar kademesi" detail="Sunucu defteri olmadan gösterilmez." />
+        <FutureSlot kicker="XP" title="Puan özeti" detail="İstemci yazamaz." />
+        <FutureSlot kicker="Rozet" title="Koleksiyon" detail="Sahte rozet yok." />
+        <FutureSlot kicker="Stadyum" title="Maçta varlık" detail="Geofence sonraki faz." />
+        <FutureSlot kicker="Geçmiş" title="Maç geçmişi" detail="Resmi kayıt bağlanınca listelenir." />
       </Screen>
     );
   }
@@ -121,7 +136,6 @@ export function ProfileScreen() {
   }
 
   const profile = profileQuery.data?.profile;
-  const roles = profileQuery.data?.roles ?? [];
 
   async function signOut() {
     const supabase = getSupabaseClient();
@@ -145,27 +159,20 @@ export function ProfileScreen() {
   return (
     <Screen scroll>
       {isOffline ? <OfflineState onRetry={() => void refresh()} /> : null}
-      <Text variant="title">Profil</Text>
-      <Card>
-        <Avatar name={profile?.display_name ?? 'Taraftar'} />
-        <Text variant="subtitle">{profile?.display_name ?? 'Taraftar'}</Text>
-        <Text muted>{session.user.email}</Text>
-        <Divider />
-        <Text variant="caption">Dil: {profile?.preferred_locale ?? 'tr'}</Text>
-        <Text variant="caption">Tema tercihi: {profile?.theme_preference ?? 'system'} (yer tutucu)</Text>
-        <Text variant="caption">Hesap: aktif</Text>
-        <Divider />
-        <Text variant="caption">Roller (salt okunur)</Text>
-        {roles.map((role) => (
-          <Badge key={role} label={role} />
-        ))}
-        <Button
-          label="Çıkış yap"
-          variant="danger"
-          loading={signingOut}
-          onPress={() => setSignOutOpen(true)}
+        <ClubIdentity
+          compact
+          title={profile?.display_name ?? 'Taraftar'}
+          subtitle={session.user.email ?? ''}
+          kicker="Taraftar"
         />
-      </Card>
+      <IdentityCard />
+      <SectionHeader title="Kimlik katmanı" quiet />
+      <FutureSlot kicker="Seviye" title="Taraftar kademesi" detail="Henüz hesaplanmaz." />
+      <FutureSlot kicker="XP" title="ES ES puanı" detail="Ledger yok." />
+      <FutureSlot kicker="Rozet" title="Koleksiyon" detail="Boş tutulur." />
+      <FutureSlot kicker="Stadyum" title="Varlık kayıtları" detail="Doğrulama yok." />
+      <FutureSlot kicker="Geçmiş" title="Maç geçmişi" detail="Resmi kayıt bağlanınca listelenir." />
+      <Button label="Çıkış yap" variant="danger" loading={signingOut} onPress={() => setSignOutOpen(true)} />
       <Dialog
         visible={signOutOpen}
         title="Çıkış"

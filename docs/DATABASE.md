@@ -4,15 +4,37 @@ Proposed PostgreSQL schema for the Eskişehirspor fan application.
 
 ### Phase 0 implemented
 
-Migration `supabase/migrations/20260915120000_phase0_identity.sql` creates only:
+Migration `supabase/migrations/20260915120000_phase0_identity.sql`:
 
-- `profiles` (`id`, `display_name`, `avatar_path`, `preferred_locale`, `theme_preference`, timestamps, `deleted_at`)
-- `user_roles` (`user_id`, `role`, `granted_by`, `granted_at`)
-- enum `app_role`: `user`, `moderator`, `editor`, `admin`, `super_admin`
-- trigger `handle_new_user` → profile + default role `user`
-- RLS default-deny; own-profile update of allowed columns; own-role select; no client writes to roles
+- `profiles`, `user_roles`, default role `user`, RLS as documented above.
 
-A hosted Supabase project is **not** linked yet. Remaining tables below are still proposed.
+### Phase 1A implemented
+
+Migration `supabase/migrations/20260915180000_phase1a_content.sql`:
+
+- `news_categories`, `news_articles`, `news_article_categories`
+- `venues`, `competitions`, `teams`, `fixtures`, `match_events`, `standings`
+- Storage bucket `news-covers` (public read, content-manager write, paths `articles/{articleId}/{file}`)
+- Public read of published news (`status = published` and `published_at <= now()`)
+- Content managers (`editor`, `admin`, `super_admin`) mutate news
+- Ops admins (`admin`, `super_admin`) mutate match tables
+- Seeded category taxonomy only (Kulüp, A Takım, Duyuru). No fabricated articles or scores.
+
+### Phase 1B-A implemented
+
+Migration `supabase/migrations/20260915190000_phase1b_live_match.sql`:
+
+- `players` (squad; shirt number nullable when the official source omits it)
+- Fixture live columns: `started_at`, `second_half_started_at`, `ended_at`, `current_minute`, `current_minute_extra`, `live_updated_at`, `live_source`
+- Match events: player links, `created_by`, reverse columns, `notify_kind`, `client_request_id`
+- `match_operation_log` (audit)
+- SECURITY DEFINER RPCs for live ops; clients cannot write scores/events
+- Realtime publication for `fixtures` and `match_events`
+- Storage bucket `team-crests` (public read, ops write)
+
+**Clock model:** the database never ticks every second. `started_at` is first-half kickoff (`now()` at `live_start_match`). Halftime freezes display at 45'. `second_half_started_at` is the authoritative restart. Display minute = elapsed minutes from that timestamp (first half 0–45 + extra; second half 45–90 + extra). Clients call `server_now()` and apply an offset so the device clock is not authoritative.
+
+A hosted Supabase project is **not** linked yet. Remaining tables below (XP, community, presence) are still proposed.
 
 Conventions:
 
@@ -170,7 +192,11 @@ Coordinates are **admin-configurable**. Never hardcode as the only source of tru
 
 ### `players`
 
-`id`, `team_id`, `name`, `squad_number`, `position`, `external_id`, `is_active`.
+Implemented in Phase 1B-A: `id`, `team_id`, `display_name`, `first_name`, `last_name`, `shirt_number` (nullable), `position`, `photo_path`, `is_active`, `source_url`, `provider_code`, `provider_player_id`.
+
+### `fixtures`
+
+Phase 1A + 1B-A live columns. Status enum: `scheduled` | `live` | `halftime` | `finished` | `postponed` | `cancelled`. Scores default `0`. Live timestamps: `started_at`, `second_half_started_at`, `ended_at`, `live_updated_at`. `live_source`: `manual` | `provider` | `hybrid`. `current_minute` is a snapshot hint, not a 1 Hz tick. Provider fields: `provider_code`, `provider_fixture_id`.
 
 ### `fixtures`
 
@@ -194,9 +220,7 @@ Indexes: `kickoff_at`, `status`, unique `(provider, external_id)` where provider
 
 ### `match_events`
 
-`id`, `fixture_id`, `sort_key`, `minute`, `extra_minute`, `type` (`goal`,`own_goal`,`yellow`,`red`,`sub_in`,`sub_out`,`var`,…), `player_id`, `assist_player_id`, `payload jsonb`, `provider_event_id`, `created_at`.
-
-Unique `(provider, provider_event_id)` for idempotent ingest.
+Phase 1B-A: `event_type` enum (goal, yellow_card, red_card, substitution, period_start, halftime, second_half, full_time), `player_id`, `related_player_id` (sub in), `created_by`, `reversed_at` / `reversed_by` / `reversal_of_event_id`, `notify_kind`, `client_request_id`, `provider_event_id`, `payload jsonb`. No casual hard-delete; Super Admin `live_reverse_event`.
 
 ### `match_lineups`
 

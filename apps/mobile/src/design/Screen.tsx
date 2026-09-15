@@ -2,23 +2,42 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   KeyboardAvoidingView,
   Platform,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   View,
   type ViewProps,
 } from 'react-native';
-import { colors, spacing } from './tokens';
+import { colors, layout, spacing } from './tokens';
 
 export function Screen({
   children,
   scroll = false,
   keyboard = false,
   style,
-}: ViewProps & { scroll?: boolean; keyboard?: boolean }) {
+  refreshing = false,
+  onRefresh,
+}: ViewProps & {
+  scroll?: boolean;
+  keyboard?: boolean;
+  refreshing?: boolean;
+  onRefresh?: () => void;
+}) {
   const content = scroll ? (
     <ScrollView
       contentContainerStyle={styles.scroll}
       keyboardShouldPersistTaps="handled"
+      showsVerticalScrollIndicator={false}
+      refreshControl={
+        onRefresh ? (
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={colors.red}
+            colors={[colors.red]}
+          />
+        ) : undefined
+      }
     >
       {children}
     </ScrollView>
@@ -54,10 +73,15 @@ const styles = StyleSheet.create({
   },
   body: {
     flex: 1,
-    padding: spacing.lg,
+    paddingHorizontal: layout.gutter,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.lg,
   },
   scroll: {
     flexGrow: 1,
-    padding: spacing.lg,
+    paddingHorizontal: layout.gutter,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.xxl + layout.tabBarHeight,
+    gap: spacing.xl,
   },
 });

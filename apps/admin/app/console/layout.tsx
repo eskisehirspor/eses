@@ -1,10 +1,13 @@
 import type { ReactNode } from 'react';
-import { RoleSchema, resolveAdminAccess, type Role } from '@eskisehirspor/shared';
+import Link from 'next/link';
+import { hasContentAccess, hasOpsAdminAccess, RoleSchema, resolveAdminAccess, type Role } from '@eskisehirspor/shared';
 import { redirect } from 'next/navigation';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { signOutAction } from '../login/actions';
 import { logger } from '@/lib/logger';
 import { getAdminPublicEnv } from '@/lib/env';
+
+export const dynamic = 'force-dynamic';
 
 export default async function ConsoleLayout({ children }: { children: ReactNode }) {
   const env = getAdminPublicEnv();
@@ -49,8 +52,9 @@ export default async function ConsoleLayout({ children }: { children: ReactNode 
     <div className="shell">
       <aside className="nav">
         <strong>ES ES Admin</strong>
-        <a href="/console">Özet</a>
-        <p className="muted">Yayın, moderasyon ve XP araçları henüz yok.</p>
+        <Link href="/console">Özet</Link>
+        {hasContentAccess(roles) ? <Link href="/console/news">Haberler</Link> : null}
+        {hasOpsAdminAccess(roles) ? <Link href="/console/matches">Maçlar</Link> : null}
         <form action={signOutAction}>
           <button className="secondary" type="submit">
             Çıkış

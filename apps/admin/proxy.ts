@@ -1,6 +1,6 @@
 import { type NextRequest, NextResponse } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
-import { RoleSchema, resolveAdminAccess, type Role } from '@eskisehirspor/shared';
+import { RoleSchema, hasContentAccess, resolveAdminAccess, type Role } from '@eskisehirspor/shared';
 import { getAdminPublicEnv } from './lib/env';
 import { updateSession } from './lib/supabase/middleware';
 import { logger } from './lib/logger';
@@ -75,6 +75,12 @@ export async function proxy(request: NextRequest) {
 
     const access = resolveAdminAccess({ hasSession: true, roles });
     if (access !== 'authorized') {
+      const url = request.nextUrl.clone();
+      url.pathname = '/unauthorized';
+      return NextResponse.redirect(url);
+    }
+
+    if (pathname.startsWith('/console/news') && !hasContentAccess(roles)) {
       const url = request.nextUrl.clone();
       url.pathname = '/unauthorized';
       return NextResponse.redirect(url);

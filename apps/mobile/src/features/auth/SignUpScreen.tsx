@@ -1,7 +1,7 @@
 import { Link, router } from 'expo-router';
 import { useState } from 'react';
 import { DisplayNameSchema, SignUpSchema } from '@eskisehirspor/shared';
-import { Button, Card, ErrorState, Input, OfflineState, Screen, Text, useToast } from '@/design';
+import { Button, Card, ClubCrest, ErrorState, Input, OfflineState, Screen, Text, useToast } from '@/design';
 import { getPublicEnv } from '@/lib/env';
 import { getSupabaseClient } from '@/lib/supabase';
 import { mapAuthError } from '@/lib/auth-errors';
@@ -93,6 +93,7 @@ export function SignUpScreen() {
   return (
     <Screen scroll keyboard>
       {isOffline ? <OfflineState /> : null}
+      <ClubCrest size="lg" />
       <Text variant="title">Kayıt</Text>
       <Text muted>Varsayılan rol sunucu tarafında user olarak atanır. Rolü uygulamadan yükseltemezsin.</Text>
       <Card>

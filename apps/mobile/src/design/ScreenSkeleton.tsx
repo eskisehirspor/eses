@@ -5,10 +5,14 @@ import { Skeleton } from './Skeleton';
 export function ScreenSkeleton() {
   return (
     <View style={styles.wrap}>
-      <Skeleton height={28} width="60%" />
-      <Skeleton height={16} width="90%" />
-      <Skeleton height={16} width="80%" />
-      <Skeleton height={120} />
+      <Skeleton height={12} width="18%" />
+      <Skeleton height={40} width="78%" />
+      <Skeleton height={12} width="42%" />
+      <Skeleton height={220} />
+      <Skeleton height={18} width="36%" />
+      <Skeleton height={88} />
+      <Skeleton height={72} />
+      <Skeleton height={72} />
     </View>
   );
 }
@@ -16,6 +20,6 @@ export function ScreenSkeleton() {
 const styles = StyleSheet.create({
   wrap: {
     gap: spacing.md,
-    padding: spacing.lg,
+    paddingVertical: spacing.sm,
   },
 });
