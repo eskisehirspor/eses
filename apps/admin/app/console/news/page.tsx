@@ -1,13 +1,14 @@
 import Link from 'next/link';
 import { NEWS_STATUSES, type NewsStatus } from '@eskisehirspor/shared';
 import { listNewsArticles } from '@/lib/news/queries';
+import { importOfficialNews } from '@/lib/news/import-official';
 import { logger } from '@/lib/logger';
 import { NewsActions } from './news-actions';
 
 export default async function NewsListPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; status?: string; error?: string }>;
+  searchParams: Promise<{ q?: string; status?: string; error?: string; imported?: string; skipped?: string }>;
 }) {
   const params = await searchParams;
   const status =
@@ -31,9 +32,16 @@ export default async function NewsListPage({
     <main className="main wide">
       <div className="page-head">
         <h1>Haberler</h1>
-        <Link href="/console/news/new" className="button-link">
-          Yeni haber
-        </Link>
+        <div className="row-actions">
+          <form action={importOfficialNews}>
+            <button type="submit" className="secondary">
+              Resmi Siteden İçe Aktar
+            </button>
+          </form>
+          <Link href="/console/news/new" className="button-link">
+            Yeni haber
+          </Link>
+        </div>
       </div>
       <form className="filters" method="get">
         <input name="q" placeholder="Başlık ara" defaultValue={params.q ?? ''} />
@@ -46,6 +54,11 @@ export default async function NewsListPage({
         </select>
         <button type="submit">Filtrele</button>
       </form>
+      {params.imported != null ? (
+        <p className="muted">
+          Resmi siteden {params.imported} yeni haber içe aktarıldı{Number(params.skipped) > 0 ? `, ${params.skipped} atlandı (zaten vardı veya tarih ayrıştırılamadı)` : ''}.
+        </p>
+      ) : null}
       {params.error ? <p className="error">{params.error}</p> : null}
       {loadError ? <p className="error">{loadError}</p> : null}
       {!loadError && articles.length === 0 ? (
@@ -67,6 +80,7 @@ export default async function NewsListPage({
                 <td>
                   <Link href={`/console/news/${article.id}`}>{article.title}</Link>
                   {article.is_announcement ? <span className="pill">Duyuru</span> : null}
+                  {article.source === 'official_site' ? <span className="pill">Resmi</span> : null}
                 </td>
                 <td>{article.status}</td>
                 <td className="muted">{article.slug}</td>

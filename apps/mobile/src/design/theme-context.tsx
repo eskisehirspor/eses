@@ -1,4 +1,5 @@
 import { createContext, useContext, useMemo, useState, useEffect, type ReactNode } from 'react';
+import { useColorScheme } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import {
   normalizeThemePreference,
@@ -10,7 +11,10 @@ import { getSupabaseClient } from '@/lib/supabase';
 import { logger } from '@/lib/logger';
 
 type ThemeContextValue = {
+  /** Raw stored preference (`system` | `light` | `dark`) — what pickers should show as selected. */
   mode: AppThemeMode;
+  /** Preference resolved through the device appearance when `mode` is `system`. */
+  resolvedMode: 'light' | 'dark';
   colors: ThemeColors;
   setMode: (mode: AppThemeMode) => void;
 };
@@ -19,14 +23,15 @@ const ThemeContext = createContext<ThemeContextValue | null>(null);
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const { session } = useAuth();
-  const [mode, setModeState] = useState<AppThemeMode>('dark');
+  const systemScheme = useColorScheme();
+  const [mode, setModeState] = useState<AppThemeMode>('system');
 
   useEffect(() => {
     let cancelled = false;
     async function load() {
       if (!session?.user.id) {
         if (!cancelled) {
-          setModeState('dark');
+          setModeState('system');
         }
         return;
       }
@@ -53,18 +58,21 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     };
   }, [session?.user.id]);
 
+  const resolvedMode: 'light' | 'dark' = mode === 'system' ? (systemScheme === 'light' ? 'light' : 'dark') : mode;
+
   const value = useMemo<ThemeContextValue>(
     () => ({
       mode,
-      colors: mode === 'light' ? lightColors : darkColors,
+      resolvedMode,
+      colors: resolvedMode === 'light' ? lightColors : darkColors,
       setMode: setModeState,
     }),
-    [mode],
+    [mode, resolvedMode],
   );
 
   return (
     <ThemeContext.Provider value={value}>
-      <StatusBar style={mode === 'light' ? 'dark' : 'light'} />
+      <StatusBar style={resolvedMode === 'light' ? 'dark' : 'light'} />
       {children}
     </ThemeContext.Provider>
   );

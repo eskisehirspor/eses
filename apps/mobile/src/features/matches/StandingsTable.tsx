@@ -1,7 +1,8 @@
 import { StyleSheet, View } from 'react-native';
 import { displayTeamName } from '@eskisehirspor/shared';
 import { TeamMark, Text } from '@/design';
-import { colors, spacing, typography } from '@/design/tokens';
+import { spacing, typography } from '@/design/tokens';
+import { useColors } from '@/design/theme-context';
 import type { StandingRecord } from './api';
 
 function formatGd(value: number) {
@@ -18,12 +19,13 @@ export function StandingsTable({
   rows: StandingRecord[];
   competitionLabel: string;
 }) {
+  const colors = useColors();
   return (
     <View style={styles.wrap}>
-      <Text variant="caption" muted>
+      <Text variant="caption" muted numberOfLines={1} style={styles.competitionLabel}>
         {competitionLabel}
       </Text>
-      <View style={styles.head}>
+      <View style={[styles.head, { borderBottomColor: colors.border }]}>
         <Text variant="caption" muted style={styles.pos}>
           #
         </Text>
@@ -51,27 +53,37 @@ export function StandingsTable({
       </View>
       {rows.map((row) => {
         const name = displayTeamName(row.team);
+        const isClub = row.team.is_eskisehirspor;
         return (
-          <View key={row.team.id} style={[styles.row, row.team.is_eskisehirspor && styles.clubRow]}>
-            <Text style={styles.pos}>{row.position}</Text>
+          <View
+            key={row.team.id}
+            style={[
+              styles.row,
+              isClub && [styles.clubRow, { backgroundColor: colors.redSoft, borderLeftColor: colors.red }],
+            ]}
+          >
+            <Text style={[styles.pos, { color: colors.text }]}>{row.position}</Text>
             <View style={styles.team}>
               <TeamMark
                 name={name}
                 shortName={row.team.short_name}
-                isClub={row.team.is_eskisehirspor}
+                isClub={isClub}
                 crestUri={row.team.crest_path}
                 size="xs"
               />
-              <Text numberOfLines={1} style={[styles.teamName, row.team.is_eskisehirspor && styles.clubName]}>
+              <Text
+                numberOfLines={1}
+                style={[styles.teamName, { color: colors.text }, isClub && [styles.clubName, { color: colors.red }]]}
+              >
                 {name}
               </Text>
             </View>
-            <Text style={styles.stat}>{row.played}</Text>
-            <Text style={styles.stat}>{row.wins}</Text>
-            <Text style={styles.stat}>{row.draws}</Text>
-            <Text style={styles.stat}>{row.losses}</Text>
-            <Text style={styles.gd}>{formatGd(row.goal_difference)}</Text>
-            <Text style={styles.pts}>{row.points}</Text>
+            <Text style={[styles.stat, { color: colors.text }]}>{row.played}</Text>
+            <Text style={[styles.stat, { color: colors.text }]}>{row.wins}</Text>
+            <Text style={[styles.stat, { color: colors.text }]}>{row.draws}</Text>
+            <Text style={[styles.stat, { color: colors.text }]}>{row.losses}</Text>
+            <Text style={[styles.gd, { color: colors.text }]}>{formatGd(row.goal_difference)}</Text>
+            <Text style={[styles.pts, { color: colors.text }]}>{row.points}</Text>
           </View>
         );
       })}
@@ -83,12 +95,14 @@ const styles = StyleSheet.create({
   wrap: {
     gap: spacing.sm,
   },
+  competitionLabel: {
+    textAlign: 'center',
+  },
   head: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingBottom: spacing.xs,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.border,
   },
   row: {
     flexDirection: 'row',
@@ -97,10 +111,8 @@ const styles = StyleSheet.create({
     gap: 2,
   },
   clubRow: {
-    backgroundColor: colors.redSoft,
-    borderLeftWidth: 2,
-    borderLeftColor: colors.red,
-    paddingLeft: 6,
+    borderLeftWidth: 3,
+    paddingLeft: 5,
     marginLeft: -8,
   },
   pos: {

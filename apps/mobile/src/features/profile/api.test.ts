@@ -12,7 +12,7 @@ describe('own profile update contract', () => {
       display_name: 'Eskişehir 16',
       theme_preference: 'system',
     });
-    expect(payload.theme_preference).toBe('dark');
+    expect(payload.theme_preference).toBe('system');
     expect(Object.keys(payload).sort()).toEqual(
       ['display_name', 'preferred_locale', 'theme_preference'].sort(),
     );

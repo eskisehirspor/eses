@@ -161,13 +161,14 @@ describe('club display name', () => {
 });
 
 describe('theme preference', () => {
-  it('maps legacy system to dark and keeps light/dark', () => {
-    expect(resolveAppTheme('system')).toBe('dark');
-    expect(resolveAppTheme(null)).toBe('dark');
+  it('keeps system as a real preference and defaults unknown input to system', () => {
+    expect(resolveAppTheme('system')).toBe('system');
+    expect(resolveAppTheme(null)).toBe('system');
     expect(resolveAppTheme('dark')).toBe('dark');
     expect(resolveAppTheme('light')).toBe('light');
+    expect(resolveAppTheme('garbage')).toBe('system');
     expect(buildOwnProfileUpdate({ display_name: 'Taraftar 16', theme_preference: 'system' }).theme_preference).toBe(
-      'dark',
+      'system',
     );
   });
 });

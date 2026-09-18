@@ -55,6 +55,29 @@ describe('2026-2027 Nesine 3. Lig group 2 catalog', () => {
     expect(integrity.finishedCount).toBe(18);
   });
 
+  it('keeps official TFF home/away for rounds 5 and 6 (regression: eskisehirspor.org.tr/fikstur cross-check)', () => {
+    const week5 = CATALOG_FIXTURES.find(
+      (fixture) => fixture.homeSlug === '1922-aksehir' && fixture.awaySlug === 'eskisehirspor',
+    );
+    const week6 = CATALOG_FIXTURES.find(
+      (fixture) => fixture.homeSlug === 'eskisehirspor' && fixture.awaySlug === 'etimesgut',
+    );
+    expect(week5).toMatchObject({
+      status: 'scheduled',
+      homeScore: null,
+      awayScore: null,
+      date: '2026-10-03',
+      kickoffTime: '15:00',
+    });
+    expect(week6).toMatchObject({
+      status: 'scheduled',
+      homeScore: null,
+      awayScore: null,
+      date: '2026-10-11',
+      kickoffTime: '19:00',
+    });
+  });
+
   it('derives standings only from finished TFF results', () => {
     expect(CATALOG_STANDINGS).toHaveLength(18);
     const club = CATALOG_STANDINGS.find((row) => row.slug === 'eskisehirspor');

@@ -30,18 +30,20 @@ export const ProfileUpdateSchema = z
 
 export type ThemePreference = z.infer<typeof ThemePreferenceSchema>;
 
-export type AppThemeMode = 'dark' | 'light';
+export type AppThemeMode = 'system' | 'light' | 'dark';
 
-/** UI-facing theme choices. DB may still hold legacy `system`. */
+/** UI-facing theme choices, System first to match platform convention. */
 export const THEME_UI_OPTIONS = [
-  { value: 'dark', label: 'Koyu' },
+  { value: 'system', label: 'Sistem' },
   { value: 'light', label: 'Açık' },
+  { value: 'dark', label: 'Koyu' },
 ] as const satisfies readonly { value: AppThemeMode; label: string }[];
 
 export const THEME_PREFERENCE_OPTIONS = THEME_UI_OPTIONS;
 
+/** Unknown/legacy input defaults to `system`, the DB column's own default. */
 export function resolveAppTheme(preference: string | null | undefined): AppThemeMode {
-  return preference === 'light' ? 'light' : 'dark';
+  return preference === 'light' || preference === 'dark' || preference === 'system' ? preference : 'system';
 }
 
 export function normalizeThemePreference(preference: string | null | undefined): AppThemeMode {

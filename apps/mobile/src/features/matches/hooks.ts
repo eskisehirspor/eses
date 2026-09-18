@@ -4,6 +4,16 @@ import { getPublicEnv } from '@/lib/env';
 import { getSupabaseClient } from '@/lib/supabase';
 import { fetchActiveStandings, fetchFixture, fetchFixtures, fetchMatchEvents, fetchServerNow } from './api';
 
+/**
+ * `RealtimeClient.channel(topic)` returns the existing channel if one with the
+ * same topic is still registered (e.g. another mounted screen, or a not-yet-
+ * torn-down previous mount of this same hook). A shared `fixture:${id}` topic
+ * can therefore hand back an already-subscribed channel, and calling `.on()`
+ * on it throws. A per-mount unique topic guarantees every effect run always
+ * gets its own fresh channel.
+ */
+let fixtureChannelSeq = 0;
+
 export function useFixtures() {
   return useQuery({
     queryKey: ['fixtures'],
@@ -29,7 +39,7 @@ export function useFixture(id: string) {
       return;
     }
     const channel = supabase
-      .channel(`fixture:${id}`)
+      .channel(`fixture:${id}:${++fixtureChannelSeq}`)
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'fixtures', filter: `id=eq.${id}` },

@@ -1,4 +1,5 @@
 import { Stack } from 'expo-router';
+import { BackButton } from '@/design';
 import { typography } from '@/design/tokens';
 import { useColors } from '@/design/theme-context';
 
@@ -18,7 +19,7 @@ export default function MatchesStackLayout() {
       }}
     >
       <Stack.Screen name="index" options={{ headerShown: false }} />
-      <Stack.Screen name="[id]" options={{ title: 'Maç' }} />
+      <Stack.Screen name="[id]" options={{ title: 'Maç', headerLeft: () => <BackButton /> }} />
     </Stack>
   );
 }

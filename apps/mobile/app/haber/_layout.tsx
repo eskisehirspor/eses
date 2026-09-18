@@ -1,4 +1,5 @@
 import { Stack } from 'expo-router';
+import { BackButton } from '@/design';
 import { typography } from '@/design/tokens';
 import { useColors } from '@/design/theme-context';
 
@@ -18,7 +19,7 @@ export default function NewsStackLayout() {
       }}
     >
       <Stack.Screen name="index" options={{ title: 'Haberler' }} />
-      <Stack.Screen name="[slug]" options={{ title: 'Haber' }} />
+      <Stack.Screen name="[slug]" options={{ title: 'Haber', headerLeft: () => <BackButton /> }} />
     </Stack>
   );
 }

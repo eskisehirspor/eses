@@ -1,5 +1,6 @@
 export { BrandSplash } from './BrandSplash';
 export { Avatar } from './Avatar';
+export { BackButton } from './BackButton';
 export { Badge } from './Badge';
 export { BottomSheet } from './BottomSheet';
 export { Button } from './Button';

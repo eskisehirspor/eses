@@ -1,9 +1,10 @@
-import { StyleSheet, View } from 'react-native';
+import { Linking, StyleSheet, View } from 'react-native';
 import {
   EditorialEmpty,
   EditorialImage,
   ErrorState,
   OfflineState,
+  PressableScale,
   Screen,
   ScreenSkeleton,
   SectionHeader,
@@ -12,6 +13,7 @@ import {
 import { layout, spacing } from '@/design/tokens';
 import { formatDate } from '@/lib/format';
 import { toUserMessage } from '@/lib/errors';
+import { logger } from '@/lib/logger';
 import { useNetwork } from '@/lib/network-context';
 import { useNewsDetail } from './hooks';
 
@@ -78,6 +80,22 @@ export function NewsDetailScreen({ slug }: { slug: string }) {
         </Text>
       </View>
       <Text>{article.content}</Text>
+      {article.source === 'official_site' && article.sourceUrl ? (
+        <PressableScale
+          onPress={() => {
+            void Linking.openURL(article.sourceUrl!).catch((error: unknown) => {
+              logger.error('Resmi haber bağlantısı açılamadı', {
+                code: 'news.source_link',
+                cause: error instanceof Error ? error.message : 'unknown',
+              });
+            });
+          }}
+          accessibilityRole="link"
+          accessibilityLabel="Resmi sitede oku"
+        >
+          <Text tone="accent">Resmi sitede oku →</Text>
+        </PressableScale>
+      ) : null}
       <View>
         <SectionHeader title="İlgili" quiet />
         <EditorialEmpty

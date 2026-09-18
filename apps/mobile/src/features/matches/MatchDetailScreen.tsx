@@ -1,5 +1,12 @@
-import { View } from 'react-native';
-import { MATCH_EVENT_LABELS, deriveMatchClock, displaysScore, formatKickoffLabel, type MatchEventType } from '@eskisehirspor/shared';
+import type { ReactNode } from 'react';
+import { StyleSheet, View } from 'react-native';
+import Ionicons from '@expo/vector-icons/Ionicons';
+import {
+  MATCH_EVENT_LABELS,
+  deriveMatchClock,
+  formatKickoffDate,
+  type MatchEventType,
+} from '@eskisehirspor/shared';
 import {
   EditorialEmpty,
   ErrorState,
@@ -9,14 +16,43 @@ import {
   SectionHeader,
   Text,
 } from '@/design';
+import { iconSize, radii, spacing } from '@/design/tokens';
+import { useColors } from '@/design/theme-context';
 import { toUserMessage } from '@/lib/errors';
 import { useNetwork } from '@/lib/network-context';
 import { useFixture, useMatchEvents, useServerAlignedClock } from './hooks';
 import { MatchScoreboard } from './MatchScoreboard';
-import { AwayTripChip } from './AwayTripSheet';
 import { fixtureAwayTrip } from './away-trip';
+import { TicketButton } from './TicketButton';
+import { WeatherValue } from './WeatherPanel';
+
+function InfoRow({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <View style={styles.infoRow}>
+      <Text variant="caption" muted style={styles.infoLabel}>
+        {label}
+      </Text>
+      <View style={styles.infoValue}>{children}</View>
+    </View>
+  );
+}
+
+/** "19.09.2026 · Cumartesi" — date and weekday together, once, in Maç bilgisi only. */
+function formatKickoffDateWithWeekday(iso: string): string {
+  const date = formatKickoffDate(iso);
+  if (!date) {
+    return '—';
+  }
+  const parsed = new Date(iso);
+  if (Number.isNaN(parsed.getTime())) {
+    return date;
+  }
+  const weekday = new Intl.DateTimeFormat('tr-TR', { weekday: 'long', timeZone: 'Europe/Istanbul' }).format(parsed);
+  return `${date} · ${weekday}`;
+}
 
 export function MatchDetailScreen({ id }: { id: string }) {
+  const colors = useColors();
   const { isOffline, refresh } = useNetwork();
   const query = useFixture(id);
   const eventsQuery = useMatchEvents(id);
@@ -51,7 +87,6 @@ export function MatchDetailScreen({ id }: { id: string }) {
   }
 
   const fixture = query.data;
-  const showScore = displaysScore(fixture.status);
   const clock = deriveMatchClock({
     status: fixture.status,
     startedAt: fixture.started_at,
@@ -61,6 +96,10 @@ export function MatchDetailScreen({ id }: { id: string }) {
   });
   const events = eventsQuery.data ?? [];
   const awayTrip = fixtureAwayTrip(fixture);
+  const clubAway = fixture.away_team.is_eskisehirspor;
+  const kickoffDate = formatKickoffDateWithWeekday(fixture.kickoff_at);
+  const venueName = fixture.venue?.name ?? awayTrip?.stadiumName ?? null;
+  const venueCity = fixture.venue?.city ?? awayTrip?.city ?? null;
 
   return (
     <Screen
@@ -72,26 +111,37 @@ export function MatchDetailScreen({ id }: { id: string }) {
       }}
     >
       {isOffline ? <OfflineState onRetry={() => void refresh()} /> : null}
-      <MatchScoreboard
-        fixture={fixture}
-        kicker={showScore ? 'Maç merkezi' : 'Maç günü'}
-        clockLabel={clock.label}
-      />
+      <MatchScoreboard fixture={fixture} kicker="Maç merkezi" clockLabel={clock.label} hideKickoffSummary />
       <View>
-        <SectionHeader title="Maç bilgisi" quiet />
-        <Text muted>{formatKickoffLabel(fixture.kickoff_at)}</Text>
-        {fixture.venue ? (
-          <Text muted>
-            {fixture.venue.name}
-            {fixture.venue.city ? ` · ${fixture.venue.city}` : ''}
-          </Text>
-        ) : (
-          <Text variant="caption" muted>
-            Stadyum kaydı yok.
-          </Text>
-        )}
-        {awayTrip ? <AwayTripChip fixture={fixture} trip={awayTrip} /> : null}
+        <SectionHeader title="Maç bilgisi" />
+        <View style={[styles.infoCard, { backgroundColor: colors.surfaceRaised }]}>
+          <InfoRow label="Tarih">
+            <Text numberOfLines={1}>{kickoffDate}</Text>
+          </InfoRow>
+          <InfoRow label="Tahmini Hava Durumu">
+            <WeatherValue />
+          </InfoRow>
+          <InfoRow label="Stadyum">
+            {venueName ? (
+              <Text numberOfLines={1}>
+                {venueName}
+                {venueCity ? ` · ${venueCity}` : ''}
+              </Text>
+            ) : (
+              <Text muted>Stadyum kaydı yok.</Text>
+            )}
+          </InfoRow>
+          {clubAway && awayTrip?.approxRoadKm != null ? (
+            <View style={styles.travelRow}>
+              <Ionicons name="airplane-outline" size={iconSize.sm} color={colors.red} accessibilityLabel="Deplasman maçı" />
+              <Text variant="caption" muted>
+                Deplasman · ~{awayTrip.approxRoadKm} km
+              </Text>
+            </View>
+          ) : null}
+        </View>
       </View>
+      <TicketButton />
       <View>
         <SectionHeader title="Olaylar" quiet />
         {events.length === 0 ? (
@@ -119,3 +169,32 @@ export function MatchDetailScreen({ id }: { id: string }) {
     </Screen>
   );
 }
+
+const styles = StyleSheet.create({
+  infoCard: {
+    borderRadius: radii.lg,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    gap: spacing.xxs,
+  },
+  travelRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xxs,
+    paddingVertical: spacing.xs,
+  },
+  infoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: spacing.sm,
+    paddingVertical: spacing.xs,
+  },
+  infoLabel: {
+    minWidth: 88,
+  },
+  infoValue: {
+    flex: 1,
+    alignItems: 'flex-end',
+  },
+});

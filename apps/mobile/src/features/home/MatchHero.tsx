@@ -10,6 +10,7 @@ export function MatchHero({ fixture, clockLabel }: { fixture: FixtureRecord | nu
       cta={fixture ? 'Maç merkezi' : undefined}
       onPress={fixture ? () => router.push(`/maclar/${fixture.id}`) : undefined}
       clockLabel={clockLabel}
+      compact
     />
   );
 }

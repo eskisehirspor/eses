@@ -7,19 +7,19 @@ import {
   PageHeader,
   Screen,
   ScreenSkeleton,
-  SectionHeader,
   SegmentedControl,
 } from '@/design';
 import { toUserMessage } from '@/lib/errors';
 import { useNetwork } from '@/lib/network-context';
-import { classifyFixtures, partitionClubFixtures } from './classification';
+import { clubUpcomingFixtures, groupFixturesByWeek, resolveCurrentWeekIndex } from './classification';
 import { useFixtures, useStandings } from './hooks';
-import { MatchCard, MatchRowPlaceholder } from './MatchCard';
+import { FixtureRow, UpcomingMatchCard, UpcomingRowPlaceholder } from './MatchCard';
 import { StandingsTable } from './StandingsTable';
+import { WeekSelector } from './WeekSelector';
 
 const TABS = [
   { value: 'upcoming', label: 'Yaklaşan' },
-  { value: 'results', label: 'Sonuçlar' },
+  { value: 'fixtures', label: 'Fikstür' },
   { value: 'table', label: 'Puan Durumu' },
 ] as const;
 
@@ -30,6 +30,11 @@ export function MatchesScreen() {
   const fixturesQuery = useFixtures();
   const standingsQuery = useStandings();
   const [tab, setTab] = useState<Tab>('upcoming');
+  const [weekIndex, setWeekIndex] = useState<number | null>(null);
+  // Captured once at mount — "current week" only needs to be right when the screen opens.
+  const [nowMs] = useState(() => Date.now());
+
+  const weekGroups = groupFixturesByWeek(fixturesQuery.data ?? []);
 
   if (fixturesQuery.isLoading || standingsQuery.isLoading) {
     return (
@@ -50,12 +55,10 @@ export function MatchesScreen() {
     );
   }
 
-  const { upcoming, recent } = classifyFixtures(fixturesQuery.data ?? []);
-  const clubUpcoming = partitionClubFixtures(upcoming);
-  const clubRecent = partitionClubFixtures(recent);
-  const nextClub = clubUpcoming.club[0] ?? null;
-  const laterClub = clubUpcoming.club.slice(1);
+  const clubUpcoming = clubUpcomingFixtures(fixturesQuery.data ?? []);
   const standings = standingsQuery.data;
+  const activeWeekIndex = weekIndex ?? resolveCurrentWeekIndex(weekGroups, nowMs);
+  const activeWeek = weekGroups[activeWeekIndex] ?? null;
 
   return (
     <Screen
@@ -68,13 +71,13 @@ export function MatchesScreen() {
     >
       {isOffline ? <OfflineState onRetry={() => void refresh()} /> : null}
       <View>
-        <PageHeader title="Maçlar" subtitle="Yaklaşan · Sonuçlar · Puan durumu" />
+        <PageHeader title="Maçlar" />
         <SegmentedControl value={tab} options={TABS} onChange={setTab} />
       </View>
       {tab === 'upcoming' ? (
-        upcoming.length === 0 ? (
+        clubUpcoming.length === 0 ? (
           <View>
-            <MatchRowPlaceholder mode="upcoming" />
+            <UpcomingRowPlaceholder />
             <EditorialEmpty
               title="Yaklaşan maç yok"
               description="Fikstür kaydı gelince Eskişehirspor maçları burada durur."
@@ -82,43 +85,27 @@ export function MatchesScreen() {
           </View>
         ) : (
           <View>
-            {nextClub ? <MatchCard fixture={nextClub} featured /> : null}
-            {laterClub.map((fixture) => (
-              <MatchCard key={fixture.id} fixture={fixture} />
+            {clubUpcoming.map((fixture, index) => (
+              <UpcomingMatchCard key={fixture.id} fixture={fixture} featured={index === 0} />
             ))}
-            {clubUpcoming.rest.length > 0 ? (
-              <>
-                <SectionHeader title="Grup fikstürü" quiet />
-                {clubUpcoming.rest.map((fixture) => (
-                  <MatchCard key={fixture.id} fixture={fixture} compact />
-                ))}
-              </>
-            ) : null}
           </View>
         )
       ) : null}
-      {tab === 'results' ? (
-        recent.length === 0 ? (
-          <View>
-            <MatchRowPlaceholder mode="result" />
-            <EditorialEmpty
-              title="Sonuç yok"
-              description="Biten Eskişehirspor maçları burada görünür."
-            />
-          </View>
+      {tab === 'fixtures' ? (
+        weekGroups.length === 0 ? (
+          <EditorialEmpty title="Fikstür yok" description="Resmi fikstür kaydı gelince burada dolar." />
         ) : (
           <View>
-            {clubRecent.club.map((fixture) => (
-              <MatchCard key={fixture.id} fixture={fixture} emphasizeScore />
+            <WeekSelector
+              label={activeWeek?.label ? activeWeek.label.toLocaleUpperCase('tr-TR') : 'TARİH BELİRSİZ'}
+              onPrevious={() => setWeekIndex(Math.max(0, activeWeekIndex - 1))}
+              onNext={() => setWeekIndex(Math.min(weekGroups.length - 1, activeWeekIndex + 1))}
+              hasPrevious={activeWeekIndex > 0}
+              hasNext={activeWeekIndex < weekGroups.length - 1}
+            />
+            {(activeWeek?.fixtures ?? []).map((fixture) => (
+              <FixtureRow key={fixture.id} fixture={fixture} />
             ))}
-            {clubRecent.rest.length > 0 ? (
-              <>
-                <SectionHeader title="Grup sonuçları" quiet />
-                {clubRecent.rest.map((fixture) => (
-                  <MatchCard key={fixture.id} fixture={fixture} emphasizeScore compact />
-                ))}
-              </>
-            ) : null}
           </View>
         )
       ) : null}

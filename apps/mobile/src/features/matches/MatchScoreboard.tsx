@@ -22,23 +22,40 @@ function EmptyOpponent({ size, borderColor }: { size: number; borderColor: strin
   );
 }
 
+/** A scheduled match has no status worth announcing — never renders "Planlandı". */
+function statusWordFor(fixture: FixtureRecord | null): string | null {
+  if (!fixture || fixture.status === 'scheduled') {
+    return null;
+  }
+  return FIXTURE_STATUS_LABELS[fixture.status];
+}
+
 export function MatchScoreboard({
   fixture,
   kicker,
   cta,
   onPress,
   clockLabel,
+  hideKickoffSummary = false,
+  compact = false,
 }: {
   fixture: FixtureRecord | null;
   kicker: string;
   cta?: string;
   onPress?: () => void;
   clockLabel?: string | null;
+  /** Match Detail shows date/venue in its own "Maç bilgisi" section — skip this line there to avoid duplication. */
+  hideKickoffSummary?: boolean;
+  /** Home's hero uses this for a more balanced, less flat-and-wide composition. Match Detail leaves this off. */
+  compact?: boolean;
 }) {
   const colors = useColors();
   const showScore = fixture ? displaysScore(fixture.status) : false;
   const homeName = fixture ? displayTeamName(fixture.home_team) : 'Eskişehirspor';
   const awayName = fixture ? displayTeamName(fixture.away_team) : 'Rakip';
+  const statusWord = statusWordFor(fixture);
+  const crestSize = compact ? 'md' : 'lg';
+  const emptyOpponentSize = compact ? 40 : 80;
   const center = showScore && fixture
     ? `${fixture.home_score ?? '–'}–${fixture.away_score ?? '–'}`
     : fixture
@@ -49,6 +66,7 @@ export function MatchScoreboard({
     <View
       style={[
         styles.board,
+        compact && styles.boardCompact,
         {
           backgroundColor: colors.surface,
           borderTopColor: colors.red,
@@ -60,11 +78,13 @@ export function MatchScoreboard({
         <Text variant="caption" tone="accent">
           {kicker}
         </Text>
-        <Text variant="caption" muted>
-          {fixture ? FIXTURE_STATUS_LABELS[fixture.status] : 'Bekleniyor'}
-        </Text>
+        {statusWord ? (
+          <Text variant="caption" muted>
+            {statusWord}
+          </Text>
+        ) : null}
       </View>
-      <Text variant="caption" muted>
+      <Text variant="body" muted numberOfLines={1} style={styles.competition}>
         {fixture
           ? [fixture.competition.name, fixture.round_label].filter(Boolean).join('  ·  ')
           : 'Resmi fikstür kaydı yok'}
@@ -77,10 +97,10 @@ export function MatchScoreboard({
               shortName={fixture.home_team.short_name}
               isClub={fixture.home_team.is_eskisehirspor}
               crestUri={fixture.home_team.crest_path}
-              size="lg"
+              size={crestSize}
             />
           ) : (
-            <ClubCrest size="lg" />
+            <ClubCrest size={crestSize} />
           )}
           <Text
             numberOfLines={2}
@@ -108,10 +128,10 @@ export function MatchScoreboard({
               shortName={fixture.away_team.short_name}
               isClub={fixture.away_team.is_eskisehirspor}
               crestUri={fixture.away_team.crest_path}
-              size="lg"
+              size={crestSize}
             />
           ) : (
-            <EmptyOpponent size={80} borderColor={colors.border} />
+            <EmptyOpponent size={emptyOpponentSize} borderColor={colors.border} />
           )}
           <Text
             numberOfLines={2}
@@ -122,11 +142,13 @@ export function MatchScoreboard({
           </Text>
         </View>
       </View>
-      <Text>
-        {fixture
-          ? [formatKickoffLabel(fixture.kickoff_at), fixture.venue?.name].filter(Boolean).join('  ·  ')
-          : 'Tarih ve stadyum resmi kayıtla gelir.'}
-      </Text>
+      {hideKickoffSummary ? null : (
+        <Text>
+          {fixture
+            ? [formatKickoffLabel(fixture.kickoff_at), fixture.venue?.name].filter(Boolean).join('  ·  ')
+            : 'Tarih ve stadyum resmi kayıtla gelir.'}
+        </Text>
+      )}
       {cta ? (
         <Text variant="caption" tone="accent">
           {cta}
@@ -154,6 +176,16 @@ const styles = StyleSheet.create({
     borderTopWidth: layout.stripe,
     borderBottomWidth: StyleSheet.hairlineWidth,
     gap: spacing.md,
+  },
+  boardCompact: {
+    paddingVertical: spacing.md,
+    gap: spacing.sm,
+  },
+  competition: {
+    textAlign: 'center',
+    fontSize: typography.size.lg,
+    lineHeight: typography.lineHeight.lg,
+    fontWeight: typography.weight.semibold,
   },
   top: {
     flexDirection: 'row',

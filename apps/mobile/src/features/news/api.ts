@@ -8,6 +8,8 @@ export type NewsCategory = {
   title: string;
 };
 
+export type NewsSource = 'admin' | 'official_site';
+
 export type NewsListItem = {
   id: string;
   title: string;
@@ -17,12 +19,14 @@ export type NewsListItem = {
   coverUrl: string | null;
   published_at: string | null;
   is_announcement: boolean;
+  source: NewsSource;
   categories: NewsCategory[];
 };
 
 export type NewsDetail = NewsListItem & {
   content: string;
   authorName: string | null;
+  sourceUrl: string | null;
 };
 
 function requireClient() {
@@ -33,9 +37,13 @@ function requireClient() {
   return client;
 }
 
+/** Official-site imports store the source's own absolute image URL; admin articles store a storage path. */
 function coverUrl(path: string | null): string | null {
   if (!path) {
     return null;
+  }
+  if (/^https?:\/\//i.test(path)) {
+    return path;
   }
   const client = getSupabaseClient();
   if (!client) {
@@ -78,7 +86,7 @@ export async function fetchPublishedNews(input?: { categoryId?: string }): Promi
   const { data, error } = await supabase
     .from('news_articles')
     .select(
-      'id, title, slug, excerpt, cover_path, published_at, is_announcement, status, news_article_categories(news_categories(id, slug, title))',
+      'id, title, slug, excerpt, cover_path, published_at, is_announcement, status, source, news_article_categories(news_categories(id, slug, title))',
     )
     .eq('status', 'published')
     .lte('published_at', new Date().toISOString())
@@ -99,6 +107,7 @@ export async function fetchPublishedNews(input?: { categoryId?: string }): Promi
     coverUrl: coverUrl(row.cover_path),
     published_at: row.published_at,
     is_announcement: row.is_announcement,
+    source: (row.source as NewsSource) ?? 'admin',
     categories: mapCategories(row),
   }));
 
@@ -113,7 +122,7 @@ export async function fetchNewsBySlug(slug: string): Promise<NewsDetail | null> 
   const { data, error } = await supabase
     .from('news_articles')
     .select(
-      'id, title, slug, excerpt, content, cover_path, published_at, is_announcement, status, author:profiles!author_id(display_name), news_article_categories(news_categories(id, slug, title))',
+      'id, title, slug, excerpt, content, cover_path, published_at, is_announcement, status, source, source_url, author:profiles!author_id(display_name), news_article_categories(news_categories(id, slug, title))',
     )
     .eq('slug', slug)
     .eq('status', 'published')
@@ -138,6 +147,8 @@ export async function fetchNewsBySlug(slug: string): Promise<NewsDetail | null> 
     coverUrl: coverUrl(data.cover_path),
     published_at: data.published_at,
     is_announcement: data.is_announcement,
+    source: (data.source as NewsSource) ?? 'admin',
+    sourceUrl: data.source_url ?? null,
     categories: mapCategories(data),
     authorName,
   };

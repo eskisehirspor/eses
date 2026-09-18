@@ -19,6 +19,7 @@ export type NewsListRow = {
   is_announcement: boolean;
   published_at: string | null;
   updated_at: string;
+  source: 'admin' | 'official_site';
 };
 
 export async function listNewsArticles(input: { q?: string; status?: NewsStatus | 'all' }) {
@@ -26,7 +27,7 @@ export async function listNewsArticles(input: { q?: string; status?: NewsStatus 
   const supabase = await createSupabaseServerClient();
   let query = supabase
     .from('news_articles')
-    .select('id, title, slug, status, is_announcement, published_at, updated_at')
+    .select('id, title, slug, status, is_announcement, published_at, updated_at, source')
     .order('updated_at', { ascending: false });
 
   if (input.status && input.status !== 'all') {
